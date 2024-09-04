@@ -1,0 +1,41 @@
+
+# Note: this file is parsed by fetch_external_sources.py to get the revision,
+# please do not move the lines and change the formats at will.
+
+Promotion history for /spvgen/external
+
+[glslang]
+Commit: 32257786
+Date: 2024/3/21
+32257786 Fix an issue of getExtBuiltins()
+
+[SPIRV-tools]
+Commit: fe7bae09
+Date: 2024/3/25
+fe7bae09 Minor fix to cmakelists to avoid rerunning command each build (#5620)
+
+[SPIRV-headers]
+Commit: 7d500c4d
+Date: 2024/3/22
+7d500c4d  Register LLVM SPIR-V Backend as SPIR-V generator (#423)
+
+[SPIRV-cross]
+Commit: 7d92d7d8
+Date: 2024/3/18
+7d92d7d8 Merge pull request #2299 from KhronosGroup/fix-2285
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
