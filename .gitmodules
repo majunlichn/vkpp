@@ -7,3 +7,6 @@
 [submodule "imported/VulkanMemoryAllocator"]
 	path = imported/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "imported/radcpp"]
+	path = imported/radcpp
+	url = https://github.com/majunlichn/radcpp.git
