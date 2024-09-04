@@ -10,3 +10,6 @@
 [submodule "imported/radcpp"]
 	path = imported/radcpp
 	url = https://github.com/majunlichn/radcpp.git
+[submodule "imported/Vulkan-Utility-Libraries"]
+	path = imported/Vulkan-Utility-Libraries
+	url = https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git
