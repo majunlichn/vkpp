@@ -1,4 +1,4 @@
-#include <vkpp/Core/Common.h>
+#include <vkpp/Core/Instance.h>
 #include <rad/System/Application.h>
 
 int main(int argc, char* argv[])
@@ -10,19 +10,11 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    VkResult result = volkInitialize();
-    if (result == VK_SUCCESS)
+    rad::Ref<vkpp::Instance> instance = RAD_NEW vkpp::Instance();
+    if (instance->Init("VulkanViewer", VK_MAKE_VERSION(0, 0, 0)))
     {
-        uint32_t version = volkGetInstanceVersion();
-        RAD_LOG(vkpp::GetLogger(), info, "Vulkan Instance Version: {}.{}.{}",
-            VK_VERSION_MAJOR(version), VK_VERSION_MINOR(version), VK_VERSION_PATCH(version));
+        RAD_LOG_DEFAULT(info, "Vulkan instance initialized.");
     }
-    else
-    {
-        RAD_LOG(vkpp::GetLogger(), err, "volkInitialize failed!");
-    }
-
-    volkFinalize();
 
     return 0;
 }

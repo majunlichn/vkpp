@@ -1,6 +1,8 @@
 set(VKPP_SOURCE_FILES
     Core/Common.h
     Core/Common.cpp
+    Core/Instance.h
+    Core/Instance.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})
