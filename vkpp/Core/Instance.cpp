@@ -1,4 +1,5 @@
 #include <vkpp/Core/Instance.h>
+#include <vkpp/Core/PhysicalDevice.h>
 #if defined(RAD_OS_WINDOWS)
 #include <Windows.h>
 #include <vulkan/vulkan_win32.h>
@@ -229,6 +230,24 @@ bool Instance::Init(std::string_view appName, uint32_t appVersion)
 bool Instance::IsExtensionSupported(std::string_view name) const
 {
     return m_enabledExtensions.contains(name);
+}
+
+std::vector<rad::Ref<PhysicalDevice>> Instance::EnumeratePhysicalDevices()
+{
+    std::vector<rad::Ref<PhysicalDevice>> devices;
+    uint32_t deviceCount = 0;
+    VK_CHECK(vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr));
+    if (deviceCount > 0)
+    {
+        std::vector<VkPhysicalDevice> deviceHandles(deviceCount);
+        VK_CHECK(vkEnumeratePhysicalDevices(m_handle, &deviceCount, deviceHandles.data()));
+        devices.resize(deviceCount);
+        for (uint32_t i = 0; i < deviceCount; ++i)
+        {
+            devices[i] = RAD_NEW PhysicalDevice(this, deviceHandles[i]);
+        }
+    }
+    return devices;
 }
 
 } // namespace vkpp

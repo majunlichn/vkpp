@@ -19,6 +19,8 @@ public:
     uint32_t GetVersion() const { return m_version; }
     bool IsExtensionSupported(std::string_view name) const;
 
+    std::vector<rad::Ref<PhysicalDevice>> EnumeratePhysicalDevices();
+
 private:
     VkInstance m_handle = VK_NULL_HANDLE;
     uint32_t m_version = 0;

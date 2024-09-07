@@ -37,11 +37,18 @@ void ReportError(VkResult result, const char* function, const char* file, uint32
 #define VK_CHECK(func) \
     do { const VkResult result = func; ReportError(result, #func, __FILE__, __LINE__); } while(0)
 
+#define VK_STRUCTURE_CHAIN_BEGIN(Head) auto Head##ChainNext = &Head.pNext;
+#define VK_STRUCTURE_CHAIN_ADD(Head, Next) do { *Head##ChainNext = &Next; Head##ChainNext = &Next.pNext; } while(0)
+#define VK_STRUCTURE_CHAIN_END(Head) do { *Head##ChainNext = nullptr; } while(0)
+
 bool IsVersionMatchOrGreater(uint32_t version, uint32_t major, uint32_t minor, uint32_t patch);
 std::vector<VkLayerProperties> EnumerateInstanceLayers();
 std::vector<VkExtensionProperties> EnumerateInstanceExtensions(const char* layerName = nullptr);
 bool HasLayer(rad::Span<VkLayerProperties> extensions, std::string_view name);
 bool HasExtension(rad::Span<VkExtensionProperties> extensions, std::string_view name);
+
+class Instance;
+class PhysicalDevice;
 
 } // namespace vkpp
 
