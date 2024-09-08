@@ -19,5 +19,14 @@ include_directories(
 )
 
 add_subdirectory(imported/radcpp)
+
+add_library(spvgen SHARED IMPORTED GLOBAL)
+if (WIN32)
+    set_target_properties(spvgen PROPERTIES
+        IMPORTED_LOCATION "${RADCPP_ROOT}/imported/spvgen/build/Release/spvgen.dll"
+        IMPORTED_IMPLIB "${RADCPP_ROOT}/imported/spvgen/build/Release/spvgen.lib"
+    )
+endif()
+
 add_subdirectory(vkpp)
 add_subdirectory(samples/VulkanViewer)

@@ -35,6 +35,8 @@ set(VKPP_SOURCE_FILES
     Core/Surface.cpp
     Core/Swapchain.h
     Core/Swapchain.cpp
+    Core/ShaderCompiler.h
+    Core/ShaderCompiler.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})
