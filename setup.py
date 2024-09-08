@@ -39,6 +39,8 @@ def main() -> int:
     try:
         chdir(script_root)
         run("git submodule update --init --recursive")
+        chdir(script_root + "/imported/sdlpp")
+        run("python setup.py")
         build_spvgen()
         chdir(script_root)
         run("cmake -S . -B build")

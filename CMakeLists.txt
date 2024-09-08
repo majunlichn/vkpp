@@ -7,6 +7,8 @@ message("CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 
 project(vkpp)
 
+option(VKPP_BUILD_SAMPLES "Build samples." ON)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -18,7 +20,10 @@ include_directories(
     ${VKPP_ROOT}
 )
 
-add_subdirectory(imported/radcpp)
+if (NOT TARGET rad)
+    set(RAD_BUILD_TESTS OFF)
+    add_subdirectory(imported/radcpp)
+endif()
 
 add_library(spvgen SHARED IMPORTED GLOBAL)
 if (WIN32)
@@ -28,5 +33,12 @@ if (WIN32)
     )
 endif()
 
+if (NOT TARGET sdlpp)
+    set(SDLPP_BUILD_SAMPLES OFF)
+    add_subdirectory(imported/sdlpp)
+endif()
 add_subdirectory(vkpp)
-add_subdirectory(samples/VulkanViewer)
+
+if (VKPP_BUILD_SAMPLES)
+    add_subdirectory(samples/VulkanViewer)
+endif()

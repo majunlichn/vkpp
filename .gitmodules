@@ -13,3 +13,6 @@
 [submodule "imported/Vulkan-Utility-Libraries"]
 	path = imported/Vulkan-Utility-Libraries
 	url = https://github.com/KhronosGroup/Vulkan-Utility-Libraries.git
+[submodule "imported/sdlpp"]
+	path = imported/sdlpp
+	url = https://github.com/majunlichn/sdlpp.git
