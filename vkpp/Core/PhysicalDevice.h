@@ -33,6 +33,8 @@ public:
     std::vector<VkPresentModeKHR> GetSurfacePresentModes(VkSurfaceKHR surface);
     std::vector<VkSurfaceFormatKHR> GetSurfaceFormats(VkSurfaceKHR surface);
 
+    rad::Ref<Device> CreateDevice(const std::set<std::string>& extensionNames);
+
 private:
     rad::Ref<Instance> m_instance;
     VkPhysicalDevice m_handle = VK_NULL_HANDLE;

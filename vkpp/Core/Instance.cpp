@@ -55,19 +55,19 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
     switch (severity)
     {
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-        RAD_LOG(GetLogger(), debug, "[{}] {}",
+        VKPP_LOG(debug, "[{}] {}",
             pCallbackData->pMessageIdName, pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-        RAD_LOG(GetLogger(), info, "[{}] {}",
+        VKPP_LOG(info, "[{}] {}",
             pCallbackData->pMessageIdName, pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-        RAD_LOG(GetLogger(), warn, "[{}] {}",
+        VKPP_LOG(warn, "[{}] {}",
             pCallbackData->pMessageIdName, pCallbackData->pMessage);
         break;
     case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-        RAD_LOG(GetLogger(), err, "[{}] {}",
+        VKPP_LOG(err, "[{}] {}",
             pCallbackData->pMessageIdName, pCallbackData->pMessage);
 #if defined(_DEBUG)
 #if defined(RAD_COMPILER_MSVC)
@@ -87,7 +87,7 @@ bool Instance::Init(std::string_view appName, uint32_t appVersion)
     if (vkEnumerateInstanceVersion)
     {
         vkEnumerateInstanceVersion(&m_version);
-        RAD_LOG(GetLogger(), info, "Vulkan instance version: {}.{}.{}.{}",
+        VKPP_LOG(info, "Vulkan instance version: {}.{}.{}.{}",
             VK_API_VERSION_VARIANT(m_version),
             VK_VERSION_MAJOR(m_version),
             VK_VERSION_MINOR(m_version),
@@ -126,7 +126,7 @@ bool Instance::Init(std::string_view appName, uint32_t appVersion)
         }
         else
         {
-            RAD_LOG(GetLogger(), warn, "Cannot enable validation layer: "
+            VKPP_LOG(warn, "Cannot enable validation layer: "
                 "VK_LAYER_KHRONOS_validation not available!");
             enableValidation = false;
         }
@@ -162,7 +162,7 @@ bool Instance::Init(std::string_view appName, uint32_t appVersion)
         }
         else
         {
-            RAD_LOG(GetLogger(), warn, "Cannot enable validation layer: {} not available!",
+            VKPP_LOG(warn, "Cannot enable validation layer: {} not available!",
                 VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
             enableValidation = false;
         }
@@ -225,6 +225,11 @@ bool Instance::Init(std::string_view appName, uint32_t appVersion)
     }
 
     return true;
+}
+
+bool Instance::IsVersionMatchOrGreater(uint32_t major, uint32_t minor, uint32_t patch)
+{
+    return vkpp::IsVersionMatchOrGreater(m_version, major, minor, patch);
 }
 
 bool Instance::IsExtensionSupported(std::string_view name) const

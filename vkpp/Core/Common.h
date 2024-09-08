@@ -21,18 +21,30 @@
 namespace vkpp
 {
 
-class VulkanError : public std::exception
+enum QueueFamily : uint32_t
+{
+    QueueFamilyUniversal,     // Universal Engine supports all features (Graphics or Compute).
+    QueueFamilyCompute,       // Async Compute Engine (ACE)
+    QueueFamilyTransfer,      // DMA
+    QueueFamilyVideoDecode,
+    QueueFamilyVideoEncode,
+    QueueFamilyOpticalFlow,
+    QueueFamilyCount,
+};
+
+class Error : public std::exception
 {
 public:
-    VulkanError(VkResult result) : m_result(result) {}
+    Error(VkResult result) : m_result(result) {}
     const char* what() const noexcept override { return string_VkResult(m_result); }
 private:
     VkResult m_result;
-}; // class VulkanError
+}; // class Error
 
 spdlog::logger* GetLogger();
+#define VKPP_LOG(Level, ...) RAD_LOG(vkpp::GetLogger(), Level, __VA_ARGS__)
 
-// Check Vulkan return code and throw VulkanError if result < 0.
+// Check Vulkan return code and throw Error if result < 0.
 void ReportError(VkResult result, const char* function, const char* file, uint32_t line);
 #define VK_CHECK(func) \
     do { const VkResult result = func; ReportError(result, #func, __FILE__, __LINE__); } while(0)
@@ -46,9 +58,36 @@ std::vector<VkLayerProperties> EnumerateInstanceLayers();
 std::vector<VkExtensionProperties> EnumerateInstanceExtensions(const char* layerName = nullptr);
 bool HasLayer(rad::Span<VkLayerProperties> extensions, std::string_view name);
 bool HasExtension(rad::Span<VkExtensionProperties> extensions, std::string_view name);
+uint32_t GetMaxMipLevel(uint32_t width, uint32_t height);
+uint32_t GetMaxMipLevel(uint32_t width, uint32_t height, uint32_t depth);
+VkImageAspectFlags GetImageAspectFromFormat(VkFormat format);
 
 class Instance;
 class PhysicalDevice;
+class Device;
+class Queue;
+class CommandPool;
+class CommandBuffer;
+class Fence;
+class Semaphore;
+class Event;
+class RenderPass;
+class Framebuffer;
+class ShaderModule;
+class PipelineLayout;
+class Pipeline;
+class GraphicsPipeline;
+class ComputePipeline;
+class Buffer;
+class BufferView;
+class Image;
+class ImageView;
+class Sampler;
+class DescriptorPool;
+class DescriptorSetLayout;
+class DescriptorSet;
+class Surface;
+class Swapchain;
 
 } // namespace vkpp
 

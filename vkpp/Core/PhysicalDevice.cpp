@@ -1,5 +1,6 @@
 #include <vkpp/Core/PhysicalDevice.h>
 #include <vkpp/Core/Instance.h>
+#include <vkpp/Core/Device.h>
 
 namespace vkpp
 {
@@ -190,6 +191,11 @@ std::vector<VkSurfaceFormatKHR> PhysicalDevice::GetSurfaceFormats(VkSurfaceKHR s
             m_handle, surface, &formatCount, surfaceFormats.data()));
     }
     return surfaceFormats;
+}
+
+rad::Ref<Device> PhysicalDevice::CreateDevice(const std::set<std::string>& extensionNames)
+{
+    return RAD_NEW Device(m_instance, this, extensionNames);
 }
 
 } // namespace vkpp
