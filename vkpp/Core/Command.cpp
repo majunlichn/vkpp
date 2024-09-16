@@ -74,7 +74,7 @@ CommandBuffer::~CommandBuffer()
         vkFreeCommandBuffers(m_device->GetHandle(), m_commandPool->GetHandle(), 1, &m_handle);
 }
 
-void CommandBuffer::CreateCheckpoint(
+void CommandBuffer::Begin(
     VkCommandBufferUsageFlags flags,
     const VkCommandBufferInheritanceInfo* pInheritanceInfo)
 {
@@ -238,7 +238,6 @@ void CommandBuffer::EndRendering()
 {
     vkCmdEndRenderingKHR(m_handle);
 }
-
 
 void CommandBuffer::BindPipeline(Pipeline* pipeline)
 {

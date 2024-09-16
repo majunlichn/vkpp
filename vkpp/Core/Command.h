@@ -39,7 +39,7 @@ public:
 
     VkCommandBuffer GetHandle() const { return m_handle; }
 
-    void CreateCheckpoint(
+    void Begin(
         VkCommandBufferUsageFlags flags = 0,
         const VkCommandBufferInheritanceInfo* pInheritanceInfo = nullptr);
     void End();
