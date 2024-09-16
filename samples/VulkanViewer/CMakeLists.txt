@@ -1,5 +1,7 @@
 set(VulkanViewer_SOURCE_FILES
     main.cpp
+    VulkanViewer.h
+    VulkanViewer.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VulkanViewer_SOURCE_FILES})

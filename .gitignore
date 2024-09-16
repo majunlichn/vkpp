@@ -1,5 +1,6 @@
 # Custom
 build/
+vkpp/Shaders/Compiled/
 
 # Prerequisites
 *.d

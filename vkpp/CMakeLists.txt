@@ -39,6 +39,8 @@ set(VKPP_SOURCE_FILES
     Core/ShaderCompiler.cpp
     Core/Context.h
     Core/Context.cpp
+    Gui/Window.h
+    Gui/Window.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})
@@ -56,6 +58,7 @@ target_include_directories(vkpp
 
 target_link_libraries(vkpp
     PUBLIC rad
+    PUBLIC sdlpp
 )
 
 if (WIN32)
