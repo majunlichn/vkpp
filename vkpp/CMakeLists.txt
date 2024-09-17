@@ -41,6 +41,8 @@ set(VKPP_SOURCE_FILES
     Core/Context.cpp
     Gui/Window.h
     Gui/Window.cpp
+    Gui/GuiContext.h
+    Gui/GuiContext.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})

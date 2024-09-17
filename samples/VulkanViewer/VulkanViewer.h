@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vkpp/Gui/Window.h>
+#include <vkpp/Gui/GuiContext.h>
 
 class VulkanViewer : public vkpp::Window
 {
@@ -15,7 +16,15 @@ protected:
     virtual bool OnEvent(const SDL_Event& event) override;
     virtual void OnIdle() override;
 
+    virtual void OnResized(int width, int height) override;
+    void Resize(int width, int height);
+
+    virtual void OnKeyDown(const SDL_KeyboardEvent& keyDown) override;
+    virtual void OnKeyUp(const SDL_KeyboardEvent& keyUp) override;
+
 private:
     std::shared_ptr<spdlog::logger> m_logger;
+    rad::Ref<vkpp::GuiContext> m_gui;
+    bool m_showDemoWindow = true;
 
 }; // class VulkanViewer

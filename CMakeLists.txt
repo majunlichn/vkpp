@@ -35,6 +35,7 @@ endif()
 
 if (NOT TARGET sdlpp)
     set(SDLPP_BUILD_SAMPLES OFF)
+    set(VULKAN_INCLUDE_DIR ${VKPP_ROOT}/imported/Vulkan-Headers/include)
     add_subdirectory(imported/sdlpp)
 endif()
 add_subdirectory(vkpp)

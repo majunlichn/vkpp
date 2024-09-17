@@ -14,8 +14,11 @@ public:
 
     bool Create(const char* title, int w, int h, SDL_WindowFlags flags);
 
+    Context* GetContext() { return m_context.get(); }
     Surface* GetSurface() { return m_surface.get(); }
+    Image* GetRenderTarget() { return m_renderTarget.get(); }
     ImageView* GetRenderTargetView() { return m_renderTargetView.get(); }
+    Image* GetOverlay() { return m_overlay.get(); }
     ImageView* GetOverlayView() { return m_overlayView.get(); }
     Swapchain* GetSwapchain() { return m_swapchain.get(); }
     size_t GetFrameIndex() const { return m_frameIndex; }
