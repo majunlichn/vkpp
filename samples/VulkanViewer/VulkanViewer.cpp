@@ -1,4 +1,5 @@
 #include "VulkanViewer.h"
+#include <vkpp/Rendering/SceneImporter.h>
 
 VulkanViewer::VulkanViewer(rad::Ref<vkpp::Context> context) :
     vkpp::Window(context)
@@ -12,7 +13,7 @@ VulkanViewer::~VulkanViewer()
 
 bool VulkanViewer::Init()
 {
-    if (!vkpp::Window::Create("VulkanViewer", 800, 600,
+    if (!vkpp::Window::Create("VulkanViewer", 1600, 900,
         SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN))
     {
         return false;
@@ -23,6 +24,21 @@ bool VulkanViewer::Init()
     {
         RAD_LOG(m_logger, err, "m_gui->Init() failed!");
         return false;
+    }
+
+    if (sdl::GetApp()->GetArgc() > 1)
+    {
+        m_scene = RAD_NEW vkpp::Scene(m_context);
+        rad::Ref<vkpp::SceneImporter> importer = RAD_NEW vkpp::SceneImporter(m_scene.get());
+        std::string fileName = sdl::GetApp()->GetArgv()[1];
+        if (importer->Import(fileName))
+        {
+            RAD_LOG(m_logger, info, "Scene imported successfully: {}", fileName);
+        }
+        else
+        {
+            RAD_LOG(m_logger, err, "Failed to import {}!!", fileName);
+        }
     }
 
     return true;

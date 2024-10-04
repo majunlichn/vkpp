@@ -2,6 +2,7 @@
 
 #include <vkpp/Gui/Window.h>
 #include <vkpp/Gui/GuiContext.h>
+#include <vkpp/Rendering/Scene.h>
 
 class VulkanViewer : public vkpp::Window
 {
@@ -26,5 +27,7 @@ private:
     std::shared_ptr<spdlog::logger> m_logger;
     rad::Ref<vkpp::GuiContext> m_gui;
     bool m_showDemoWindow = true;
+
+    rad::Ref<vkpp::Scene> m_scene;
 
 }; // class VulkanViewer

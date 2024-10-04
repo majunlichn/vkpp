@@ -1,6 +1,8 @@
 set(VKPP_SOURCE_FILES
     Core/Common.h
     Core/Common.cpp
+    Core/Math.h
+    Core/Math.cpp
     Core/Instance.h
     Core/Instance.cpp
     Core/PhysicalDevice.h
@@ -43,6 +45,20 @@ set(VKPP_SOURCE_FILES
     Gui/Window.cpp
     Gui/GuiContext.h
     Gui/GuiContext.cpp
+    Rendering/Mesh.h
+    Rendering/Mesh.cpp
+    Rendering/Material.h
+    Rendering/Material.cpp
+    Rendering/Camera.h
+    Rendering/Camera.cpp
+    Rendering/Light.h
+    Rendering/Light.cpp
+    Rendering/Scene.h
+    Rendering/Scene.cpp
+    Rendering/SceneNode.h
+    Rendering/SceneNode.cpp
+    Rendering/SceneImporter.h
+    Rendering/SceneImporter.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})
@@ -62,6 +78,20 @@ target_link_libraries(vkpp
     PUBLIC rad
     PUBLIC sdlpp
 )
+
+find_package(glm CONFIG REQUIRED)
+target_link_libraries(vkpp PUBLIC glm::glm)
+
+target_include_directories(vkpp
+    PUBLIC ${Compressonator_INSTALL_DIR}/include
+)
+
+target_link_libraries(vkpp
+    PUBLIC CMP_Core CMP_Framework Compressonator
+)
+
+find_package(assimp CONFIG REQUIRED)
+target_link_libraries(vkpp PRIVATE assimp::assimp)
 
 if (WIN32)
 target_compile_definitions(vkpp
