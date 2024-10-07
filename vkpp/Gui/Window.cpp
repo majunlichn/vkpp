@@ -58,16 +58,15 @@ rad::Ref<Surface> Window::CreateSurface()
 
 void Window::BeginFrame()
 {
-    auto backBufferIndex = m_frameIndex % MaxFrameLag;
     // Ensure no more than MaxFrameLag renderings are outstanding.
-    m_fences[backBufferIndex]->Wait();
-    m_fences[backBufferIndex]->Reset();
+    m_fences[m_backBufferIndex]->Wait();
+    m_fences[m_backBufferIndex]->Reset();
 
     VkResult result = VK_SUCCESS;
     do {
         // If both back buffers has been drawn, waits until the first one is placed on the screen.
         result = m_swapchain->AcquireNextImage(
-            m_swapchainImageAcquired[backBufferIndex].get(), nullptr);
+            m_swapchainImageAcquired[m_backBufferIndex].get(), nullptr);
         if (result > 0)
         {
             VKPP_LOG(info, "swapchain->AcquireNextImage returns {}", string_VkResult(result));
@@ -101,6 +100,14 @@ void Window::EndFrame()
 {
     BlitToSwapchain();
     Present();
+
+    m_frameIndex += 1;
+
+    m_backBufferIndex += 1;
+    m_backBufferIndex %= MaxFrameLag;
+
+    m_cmdBufferIndex += 1;
+    m_cmdBufferIndex %= m_cmdBuffers.size();
 }
 
 void Window::OnResized(int width, int height)
@@ -133,16 +140,17 @@ void Window::Resize(int width, int height)
     m_surfaceFormats = device->GetPhysicalDevice()->GetSurfaceFormats(m_surface->GetHandle());
     m_presentModes = device->GetPhysicalDevice()->GetSurfacePresentModes(m_surface->GetHandle());
 
-    m_presentBufferCount = 3;
-    if (m_presentBufferCount < m_surfaceCaps.minImageCount)
+    m_frameBufferCount = 3;
+    if (m_frameBufferCount < m_surfaceCaps.minImageCount)
     {
-        m_presentBufferCount = m_surfaceCaps.minImageCount;
+        m_frameBufferCount = m_surfaceCaps.minImageCount;
     }
     if ((m_surfaceCaps.maxImageCount > 0) &&
-        (m_presentBufferCount > m_surfaceCaps.maxImageCount))
+        (m_frameBufferCount > m_surfaceCaps.maxImageCount))
     {
-        m_presentBufferCount = m_surfaceCaps.maxImageCount;
+        m_frameBufferCount = m_surfaceCaps.maxImageCount;
     }
+    m_context->m_frameBufferCount = m_frameBufferCount;
 
     // TODO: render scale?
     VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
@@ -162,9 +170,9 @@ void Window::Resize(int width, int height)
 
     m_cmdPool = device->CreateCommandPool(queue->GetQueueFamily(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    if (m_cmdBuffers.size() != m_presentBufferCount)
+    if (m_cmdBuffers.size() != m_frameBufferCount)
     {
-        m_cmdBuffers.resize(m_presentBufferCount);
+        m_cmdBuffers.resize(m_frameBufferCount);
         for (uint32_t i = 0; i < m_cmdBuffers.size(); ++i)
         {
             m_cmdBuffers[i] = m_cmdPool->Allocate();
@@ -346,18 +354,18 @@ bool Window::CreateSwapchain(uint32_t width, uint32_t height)
 
 bool Window::CreateBlitPipeline()
 {
-    vkpp::Device* device = m_context->GetDevice();
+    Device* device = m_context->GetDevice();
 
     std::vector<VkDescriptorSetLayoutBinding> descBindings =
     { // binding, type, count, stageFlags, samplers
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }, // renderTarget
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }, // overlay
     };
-    m_blit.descSetLayout = device->CreateDescriptorSetLayout(descBindings);
-    m_blit.pipelineLayout = device->CreatePipelineLayout(m_blit.descSetLayout.get());
+    m_blitDescSetLayout = device->CreateDescriptorSetLayout(descBindings);
+    m_blitPipelineLayout = device->CreatePipelineLayout(m_blitDescSetLayout.get());
 
-    rad::Ref<vkpp::GraphicsPipelineCreateInfo> pipelineInfo =
-        RAD_NEW vkpp::GraphicsPipelineCreateInfo(device);
+    rad::Ref<GraphicsPipelineCreateInfo> pipelineInfo =
+        RAD_NEW GraphicsPipelineCreateInfo(device);
     uint32_t vertBinary[] =
     {
 #include <vkpp/Shaders/Compiled/Gui/BlitToSwapchain.vert.inc>
@@ -366,8 +374,8 @@ bool Window::CreateBlitPipeline()
     {
 #include <vkpp/Shaders/Compiled/Gui/BlitToSwapchain.frag.inc>
     };
-    rad::Ref<vkpp::ShaderModule> vert = device->CreateShaderModule(vertBinary);
-    rad::Ref<vkpp::ShaderModule> frag = device->CreateShaderModule(fragBinary);
+    rad::Ref<ShaderModule> vert = device->CreateShaderModule(vertBinary);
+    rad::Ref<ShaderModule> frag = device->CreateShaderModule(fragBinary);
     pipelineInfo->m_shaderStages =
     {
         { VK_SHADER_STAGE_VERTEX_BIT, vert, nullptr },
@@ -375,9 +383,9 @@ bool Window::CreateBlitPipeline()
     };
     pipelineInfo->m_inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipelineInfo->DisableColorBlend(1);
-    pipelineInfo->m_layout = m_blit.pipelineLayout;
+    pipelineInfo->m_layout = m_blitPipelineLayout;
     pipelineInfo->SetRenderingInfo(m_surfaceFormat.format);
-    m_blit.pipeline = device->CreateGraphicsPipeline(pipelineInfo->Setup());
+    m_blitPipeline = device->CreateGraphicsPipeline(pipelineInfo->Setup());
 
     // Resource bingings:
     // set0, binding0: combined image sampler: renderTarget;
@@ -386,20 +394,20 @@ bool Window::CreateBlitPipeline()
     {
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 },
     };
-    m_descPool = device->CreateDescriptorPool(1, poolSizes);
-    m_descSet = m_descPool->Allocate(m_blit.descSetLayout.get());
+    m_blitDescPool = device->CreateDescriptorPool(1, poolSizes);
+    m_blitDescSet = m_blitDescPool->Allocate(m_blitDescSetLayout.get());
 
     return true;
 }
 
 void Window::UpdateBlitBindings()
 {
-    if (m_descSet && m_renderTarget)
+    if (m_blitDescSet && m_renderTarget)
     {
         VkWriteDescriptorSet write = {};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.pNext = nullptr;
-        write.dstSet = m_descSet->GetHandle();
+        write.dstSet = m_blitDescSet->GetHandle();
         write.dstBinding = 0;
         write.dstArrayElement = 0;
         write.descriptorCount = 1;
@@ -417,15 +425,15 @@ void Window::UpdateBlitBindings()
         imageInfo.imageView = m_renderTargetView->GetHandle();
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         write.pImageInfo = &imageInfo;
-        m_descSet->Update(write);
+        m_blitDescSet->Update(write);
     }
 
-    if (m_descSet && m_overlay)
+    if (m_blitDescSet && m_overlay)
     {
         VkWriteDescriptorSet write = {};
         write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write.pNext = nullptr;
-        write.dstSet = m_descSet->GetHandle();
+        write.dstSet = m_blitDescSet->GetHandle();
         write.dstBinding = 1;
         write.dstArrayElement = 0;
         write.descriptorCount = 1;
@@ -435,7 +443,7 @@ void Window::UpdateBlitBindings()
         imageInfo.imageView = m_overlayView->GetHandle();
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         write.pImageInfo = &imageInfo;
-        m_descSet->Update(write);
+        m_blitDescSet->Update(write);
     }
 }
 
@@ -474,10 +482,10 @@ void Window::BlitToSwapchain()
     ImageView* renderTargetView = m_swapchain->GetCurrentImageView();
     VkClearColorValue clearColor = {};
     cmdBuffer->BeginRendering(renderTargetView, &clearColor);
-    cmdBuffer->BindPipeline(m_blit.pipeline.get());
+    cmdBuffer->BindPipeline(m_blitPipeline.get());
     cmdBuffer->BindDescriptorSets(
-        m_blit.pipeline.get(), m_blit.pipelineLayout.get(),
-        0, m_descSet.get());
+        m_blitPipeline.get(), m_blitPipelineLayout.get(),
+        0, m_blitDescSet.get());
 
     VkViewport viewport = {};
     viewport.x = 0.0f;
@@ -506,22 +514,20 @@ void Window::BlitToSwapchain()
     }
     cmdBuffer->End();
 
-    uint32_t backBufferIndex = m_frameIndex % MaxFrameLag;
-
     queue->Submit(
         std::array{
             cmdBuffer
         },
         std::array{ // wait
             SubmitWaitInfo {
-                .semaphore = m_swapchainImageAcquired[backBufferIndex].get(),
+                .semaphore = m_swapchainImageAcquired[m_backBufferIndex].get(),
                 .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
             }
         },
         std::array{ // signal
-            m_drawComplete[backBufferIndex].get()
+            m_drawComplete[m_backBufferIndex].get()
         },
-        m_fences[backBufferIndex].get()
+        m_fences[m_backBufferIndex].get()
     );
 }
 
@@ -530,19 +536,14 @@ void Window::Present()
     Device* device = m_context->GetDevice();
     Queue* queue = m_context->GetQueue();
 
-    uint32_t backBufferIndex = m_frameIndex % MaxFrameLag;
     VkResult err = queue->Present(
         std::array{ // wait
-            m_drawComplete[backBufferIndex].get()
+            m_drawComplete[m_backBufferIndex].get()
         },
         std::array{
             m_swapchain.get()
         }
     );
-
-    m_cmdBufferIndex += 1;
-    m_cmdBufferIndex %= m_cmdBuffers.size();
-    m_frameIndex += 1;
 
     if (err != VK_SUCCESS)
     {

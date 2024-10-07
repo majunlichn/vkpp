@@ -60,26 +60,25 @@ private:
 
     // Prefer triple-buffering: 3-long first in, first out queue.
     // https://en.wikipedia.org/wiki/Multiple_buffering
-    uint32_t m_presentBufferCount = 3;
+    uint32_t m_frameBufferCount = 3;
     rad::Ref<Swapchain> m_swapchain;
 
-    struct BlitToSwapchain
-    {
-        rad::Ref<DescriptorSetLayout> descSetLayout;
-        rad::Ref<PipelineLayout> pipelineLayout;
-        rad::Ref<Pipeline> pipeline;
-    } m_blit;
+    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout;
+    rad::Ref<PipelineLayout> m_blitPipelineLayout;
+    rad::Ref<Pipeline> m_blitPipeline;
 
-    rad::Ref<DescriptorPool> m_descPool;
-    rad::Ref<DescriptorSet> m_descSet;
+    rad::Ref<DescriptorPool> m_blitDescPool;
+    rad::Ref<DescriptorSet> m_blitDescSet;
+
+    size_t m_frameIndex = 0;
+    size_t m_backBufferIndex = 0;
+    // Allow a maximum of two outstanding presentation operations.
+    static const uint32_t MaxFrameLag = 2;
 
     rad::Ref<CommandPool> m_cmdPool;
     std::vector<rad::Ref<CommandBuffer>> m_cmdBuffers;
     uint32_t m_cmdBufferIndex = 0;
 
-    size_t m_frameIndex = 0;
-    // Allow a maximum of two outstanding presentation operations.
-    static const uint32_t MaxFrameLag = 2;
     rad::Ref<Semaphore> m_swapchainImageAcquired[MaxFrameLag];
     rad::Ref<Semaphore> m_drawComplete[MaxFrameLag];
     rad::Ref<Semaphore> m_swapchainImageOwnershipTransferComplete[MaxFrameLag];

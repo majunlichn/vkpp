@@ -40,6 +40,8 @@ public:
     rad::Ref<Device> m_device;
     rad::Ref<Queue> m_queues[QueueFamilyCount];
 
+    uint32_t m_frameBufferCount = 0;
+
 }; // class Context
 
 } // namespace vkpp

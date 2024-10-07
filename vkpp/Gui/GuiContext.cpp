@@ -177,7 +177,7 @@ void GuiContext::Render()
 
     queue->Submit(cmdBuffer);
 
-    m_cmdBufferIndex++;
+    m_cmdBufferIndex += 1;
     m_cmdBufferIndex %= swapchain->GetImageCount();
 }
 
