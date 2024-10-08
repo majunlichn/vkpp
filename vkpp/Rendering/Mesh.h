@@ -3,8 +3,6 @@
 #include <vkpp/Core/Context.h>
 #include <vkpp/Core/Math.h>
 
-#include <rad/Core/Flags.h>
-
 namespace vkpp
 {
 
@@ -18,21 +16,16 @@ enum class PrimitiveType : uint32_t
     Triangle,
 };
 
-enum class VertexAttribute : uint32_t
+enum class RenderType : uint32_t
 {
-    Position = 1 << 0,
-    Normal = 1 << 1,
-    Tangent = 1 << 2,
-    Color = 1 << 3,
-    UV0 = 1 << 4,
-    UV1 = 1 << 5,
-    UV2 = 1 << 6,
-    UV3 = 1 << 7,
+    PointList,          // position
+    PointListColored,   // position + color
+    LineList,           // position
+    LineListColored,    // position + color
+    TriangleList,           // position + normal
+    TriangleListColored,    // position + normal + color
+    TriangleListTextured,   // position + normal + tangent + uv
 };
-
-using VertexFormat = rad::Flags32<VertexAttribute>;
-
-uint32_t GetVertexStride(VertexFormat format);
 
 struct VertexWeight
 {
@@ -70,16 +63,21 @@ public:
 
     AABB m_aabb;
 
-    rad::Ref<Material> m_material;
-    uint32_t m_materialIndex = 0; // cache the index in scene->m_materials?
+    RenderType m_renderType = RenderType::PointList;
+    static uint32_t GetVertexStride(RenderType renderType);
 
-    VertexFormat m_vertexFormat = VertexAttribute::Position;
+    // Upload data to GPU according to renderType.
+    bool Upload();
+
     rad::Ref<Buffer> m_vertexBuffer;
     VkDeviceSize m_vertexBufferOffset = 0;
     VkDeviceSize m_vertexBufferSize = 0;
     rad::Ref<Buffer> m_indexBuffer;
     VkDeviceSize m_indexBufferOffset = 0;
     VkDeviceSize m_indexBufferSize = 0;
+
+    rad::Ref<Material> m_material;
+    uint32_t m_materialIndex = 0; // cache the index in scene->m_materials?
 
 }; // class Mesh
 
