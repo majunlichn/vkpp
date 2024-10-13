@@ -47,7 +47,7 @@ SDL_AppResult SDL_AppEvent(void* appState, SDL_Event* event)
     return g_app->GetExit() ? SDL_APP_SUCCESS : SDL_APP_CONTINUE;
 }
 
-void SDL_AppQuit(void* appState)
+void SDL_AppQuit(void* appstate, SDL_AppResult result)
 {
     g_viewer.reset();
     g_context.reset();

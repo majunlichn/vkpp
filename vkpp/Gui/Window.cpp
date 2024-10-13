@@ -42,9 +42,9 @@ rad::Ref<Surface> Window::CreateSurface()
 {
     VkSurfaceKHR surfaceHandle = VK_NULL_HANDLE;
     Instance* instance = m_context->GetInstance();
-    SDL_bool result = SDL_Vulkan_CreateSurface(
+    bool result = SDL_Vulkan_CreateSurface(
         m_handle, instance->GetHandle(), nullptr, &surfaceHandle);
-    if (result == SDL_TRUE)
+    if (result == true)
     {
         return RAD_NEW Surface(m_context->GetInstance(), surfaceHandle);
     }
