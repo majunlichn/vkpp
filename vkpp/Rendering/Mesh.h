@@ -51,6 +51,9 @@ public:
     std::string m_name;
     PrimitiveType m_primitiveType = PrimitiveType::Point;
 
+    uint32_t GetVertexCount() const { return static_cast<uint32_t>(m_positions.size()); }
+    uint32_t GetIndexCount() const { return static_cast<uint32_t>(m_indices.size()); }
+
     std::vector<glm::vec3> m_positions;
     std::vector<glm::vec3> m_normals;
     std::vector<glm::vec4> m_tangents;

@@ -47,6 +47,10 @@ public:
         VkShaderStageFlagBits stage, std::string_view fileName, std::string_view source,
         std::string_view entryPoint = "main", rad::Span<ShaderMacro> macros = {},
         uint32_t options = SpvGenOptionVulkanRules);
+    std::vector<uint32_t> CompileFromFile(
+        VkShaderStageFlagBits stage, std::string_view fileName,
+        std::string_view entryPoint = "main", rad::Span<ShaderMacro> macros = {},
+        uint32_t options = SpvGenOptionVulkanRules);
 
     const char* GetLog() const { return m_log.c_str(); }
 
@@ -54,5 +58,7 @@ private:
     std::string m_log;
 
 }; // class ShaderCompiler
+
+void SetShaderPath(std::string shaderPath);
 
 } // namespace vkpp

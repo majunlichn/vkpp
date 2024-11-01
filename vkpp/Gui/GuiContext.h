@@ -18,7 +18,7 @@ public:
     ImGuiIO& GetIO() { return ImGui::GetIO(); }
     ImFontAtlas* GetFonts() { return ImGui::GetIO().Fonts; }
 
-    bool Init(rad::Span<VkDescriptorPoolSize> poolSizes = {});
+    bool Init(rad::Span<VkDescriptorPoolSize> descPoolSizes = {});
     void Destroy();
 
     bool ProcessEvent(const SDL_Event& event);

@@ -22,7 +22,7 @@ static void CheckResult(VkResult result)
     }
 }
 
-bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> poolSizes)
+bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
 {
     Context* context = m_window->GetContext();
     Instance* instance = context->GetInstance();
@@ -43,9 +43,9 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> poolSizes)
     ImGuiStyle* style = &ImGui::GetStyle();
     style->GrabRounding = 4.0f;
 
-    std::vector<VkDescriptorPoolSize> defaultPoolSizes =
+    std::vector<VkDescriptorPoolSize> defaultDescPoolSizes =
     {
-        { VK_DESCRIPTOR_TYPE_SAMPLER, 1024 },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 128 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4096 },
         { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4096 },
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1024 },
@@ -53,16 +53,16 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> poolSizes)
         { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1024 },
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1024 },
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1024 },
-        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 32 },
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 32 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 8 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 8 },
     };
 
-    if (poolSizes.empty())
+    if (descPoolSizes.empty())
     {
-        poolSizes = defaultPoolSizes;
+        descPoolSizes = defaultDescPoolSizes;
     }
 
-    m_descPool = device->CreateDescriptorPool(1024, poolSizes);
+    m_descPool = device->CreateDescriptorPool(1024, descPoolSizes);
 
     ImGui_ImplVulkan_LoadFunctions(
         [](const char* functionName, void* userData) {
@@ -92,7 +92,7 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> poolSizes)
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     renderingInfo.pNext = nullptr;
     renderingInfo.viewMask = 0;
-    VkFormat format = m_window->GetOverlay()->GetFormat();
+    VkFormat format = m_window->GetOverlayFormat();
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachmentFormats = &format;
     renderingInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;

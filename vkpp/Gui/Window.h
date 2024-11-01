@@ -16,8 +16,8 @@ public:
 
     Context* GetContext() { return m_context.get(); }
     Surface* GetSurface() { return m_surface.get(); }
-    Image* GetRenderTarget() { return m_renderTarget.get(); }
-    ImageView* GetRenderTargetView() { return m_renderTargetView.get(); }
+    void SetRenderTarget(rad::Ref<Image> renderTarget, rad::Ref<ImageView> renderTargetView);
+    VkFormat GetOverlayFormat() const { return m_overlayFormat; }
     Image* GetOverlay() { return m_overlay.get(); }
     ImageView* GetOverlayView() { return m_overlayView.get(); }
     Swapchain* GetSwapchain() { return m_swapchain.get(); }
@@ -53,6 +53,7 @@ private:
 
     rad::Ref<Image> m_renderTarget;
     rad::Ref<ImageView> m_renderTargetView;
+    VkFormat m_overlayFormat = VK_FORMAT_R8G8B8A8_UNORM;
     rad::Ref<Image> m_overlay;
     rad::Ref<ImageView> m_overlayView;
     rad::Ref<Sampler> m_samplerNearest;
@@ -60,10 +61,9 @@ private:
 
     // Prefer triple-buffering: 3-long first in, first out queue.
     // https://en.wikipedia.org/wiki/Multiple_buffering
-    uint32_t m_frameBufferCount = 3;
     rad::Ref<Swapchain> m_swapchain;
 
-    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout;
+    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout; 
     rad::Ref<PipelineLayout> m_blitPipelineLayout;
     rad::Ref<Pipeline> m_blitPipeline;
 

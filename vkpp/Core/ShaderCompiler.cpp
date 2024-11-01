@@ -1,6 +1,8 @@
 #define SPVGEN_STATIC_LIB
 #include <vkpp/Core/ShaderCompiler.h>
 #include <vkpp/Core/Pipeline.h>
+#include <rad/IO/File.h>
+#include <rad/System/OS.h>
 
 namespace vkpp
 {
@@ -98,6 +100,28 @@ std::vector<uint32_t> ShaderCompiler::Compile(
 
     spvFreeBuffer(program);
     return binary;
+}
+
+static std::string g_shaderPath = rad::getenv("VKPP_SHADER_PATH");
+
+void SetShaderPath(std::string shaderPath)
+{
+    g_shaderPath = std::move(shaderPath);
+}
+
+std::vector<uint32_t> ShaderCompiler::CompileFromFile(
+    VkShaderStageFlagBits stage, std::string_view fileName,
+    std::string_view entryPoint, rad::Span<ShaderMacro> macros, uint32_t options)
+{
+    std::string path(fileName);
+    if (!fileName.empty())
+    {
+        if (!pystring::os::path::isabs(path))
+        {
+            path = g_shaderPath + "/" + path;
+        }
+    }
+    return Compile(stage, path, rad::File::ReadAll(path), entryPoint, macros);
 }
 
 } // namespace vkpp

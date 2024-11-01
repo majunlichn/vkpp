@@ -111,34 +111,6 @@ void DescriptorSet::UpdateUniformBuffers(
     UpdateBuffers(binding, arrayElement, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, bufferInfos);
 }
 
-void DescriptorSet::UpdateImages(
-    uint32_t binding, uint32_t arrayElement, VkDescriptorType type,
-    rad::Span<ImageView*> imageViews, rad::Span<VkImageLayout> layouts)
-{
-    VkWriteDescriptorSet write = {};
-    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write.pNext = nullptr;
-    write.dstSet = m_handle;
-    write.dstBinding = binding;
-    write.dstArrayElement = arrayElement;
-    write.descriptorCount = static_cast<uint32_t>(imageViews.size());
-    write.descriptorType = type;
-
-    std::vector<VkDescriptorImageInfo> imageInfos(imageViews.size());
-    for (size_t i = 0; i < imageViews.size(); i++)
-    {
-        imageInfos[i].sampler = VK_NULL_HANDLE;
-        imageInfos[i].imageView = imageViews[i]->GetHandle();
-        imageInfos[i].imageLayout = layouts[i];
-    }
-
-    write.pImageInfo = imageInfos.data();
-    write.pBufferInfo = nullptr;
-    write.pTexelBufferView = nullptr;
-
-    Update(write);
-}
-
 void DescriptorSet::UpdateCombinedImageSamplers(
     uint32_t binding, uint32_t arrayElement,
     rad::Span<ImageView*> imageViews, rad::Span<VkImageLayout> layouts,

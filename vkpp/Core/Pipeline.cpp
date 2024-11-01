@@ -289,14 +289,14 @@ const VkGraphicsPipelineCreateInfo& GraphicsPipelineCreateInfo::Setup()
 }
 
 void GraphicsPipelineCreateInfo::AddVertexBindingPacked(
-    uint32_t binding, rad::Span<VkVertexInputAttrib> attribs, VkVertexInputRate inputRate)
+    uint32_t binding, rad::Span<VertexInputAttrib> attribs, VkVertexInputRate inputRate)
 {
     VkVertexInputBindingDescription bindingDesc = {};
     bindingDesc.binding = binding;
     bindingDesc.stride = 0;
     uint32_t location = 0;
     uint32_t offset = 0;
-    for (const VkVertexInputAttrib& attrib : attribs)
+    for (const VertexInputAttrib& attrib : attribs)
     {
         VkVertexInputAttributeDescription attribDesc = {};
         attribDesc.location = attrib.location;
@@ -312,7 +312,7 @@ void GraphicsPipelineCreateInfo::AddVertexBindingPacked(
     m_vertexInput.bindings.push_back(bindingDesc);
 }
 
-void GraphicsPipelineCreateInfo::DisableColorBlend(uint32_t attachCount)
+void GraphicsPipelineCreateInfo::SetColorBlendDisabled(uint32_t attachCount)
 {
     m_colorBlend.attachments.resize(attachCount);
     for (auto& attachment : m_colorBlend.attachments)

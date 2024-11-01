@@ -20,6 +20,8 @@ public:
     Scene(rad::Ref<Context> context);
     ~Scene();
 
+    bool Upload();
+
     rad::Ref<Context> m_context;
     rad::Ref<SceneNode> m_root;
 
@@ -31,6 +33,7 @@ public:
     // AbsolutePath=>Index
     std::map<std::string, size_t, rad::StringLess> m_imagePathIndexMap;
     std::vector<rad::Ref<Image>> m_images;
+    std::vector<rad::Ref<ImageView>> m_imageViews;
 
     Image* GetImage(std::string_view path)
     {

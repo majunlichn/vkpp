@@ -25,14 +25,6 @@ if (NOT TARGET rad)
     add_subdirectory(imported/radcpp)
 endif()
 
-add_library(spvgen SHARED IMPORTED GLOBAL)
-if (WIN32)
-    set_target_properties(spvgen PROPERTIES
-        IMPORTED_LOCATION "${RADCPP_ROOT}/imported/spvgen/build/Release/spvgen.dll"
-        IMPORTED_IMPLIB "${RADCPP_ROOT}/imported/spvgen/build/Release/spvgen.lib"
-    )
-endif()
-
 set(Compressonator_INSTALL_DIR "C:/Compressonator_4.5.52")
 
 add_library(CMP_Core SHARED IMPORTED GLOBAL)

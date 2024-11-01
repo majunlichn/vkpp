@@ -59,6 +59,13 @@ set(VKPP_SOURCE_FILES
     Rendering/SceneNode.cpp
     Rendering/SceneImporter.h
     Rendering/SceneImporter.cpp
+    Rendering/SolidRenderer.h
+    Rendering/SolidRenderer.cpp
+    Shaders/Gui/BlitToSwapchain.vert
+    Shaders/Gui/BlitToSwapchain.frag
+    Shaders/Rendering/Solid.glsl
+    Shaders/Rendering/Solid.vert
+    Shaders/Rendering/Solid.frag
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})

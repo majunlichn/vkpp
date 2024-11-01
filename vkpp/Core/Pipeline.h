@@ -113,7 +113,7 @@ struct SpecializationInfo : public rad::RefCounted<SpecializationInfo>
 
 }; // struct SpecializationInfo
 
-struct VkVertexInputAttrib
+struct VertexInputAttrib
 {
     uint32_t location;
     VkFormat format;
@@ -158,7 +158,7 @@ public:
     } m_vertexInput;
     // the vertex attributes are compacted in the order of formats.
     void AddVertexBindingPacked(
-        uint32_t binding, rad::Span<VkVertexInputAttrib> attribs,
+        uint32_t binding, rad::Span<VertexInputAttrib> attribs,
         VkVertexInputRate inputRate = VK_VERTEX_INPUT_RATE_VERTEX);
 
     struct InputAssemblyInfo
@@ -220,7 +220,7 @@ public:
         std::vector<VkPipelineColorBlendAttachmentState> attachments;
         float                   blendConstants[4];
     } m_colorBlend;
-    void DisableColorBlend(uint32_t attachCount);
+    void SetColorBlendDisabled(uint32_t attachCount);
 
     std::vector<VkDynamicState> m_dynamicStates =
     {

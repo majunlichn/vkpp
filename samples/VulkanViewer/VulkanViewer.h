@@ -3,6 +3,7 @@
 #include <vkpp/Gui/Window.h>
 #include <vkpp/Gui/GuiContext.h>
 #include <vkpp/Rendering/Scene.h>
+#include <vkpp/Rendering/SolidRenderer.h>
 
 class VulkanViewer : public vkpp::Window
 {
@@ -29,5 +30,6 @@ private:
     bool m_showDemoWindow = true;
 
     rad::Ref<vkpp::Scene> m_scene;
+    rad::Ref<vkpp::SolidRenderer> m_solidRenderer;
 
 }; // class VulkanViewer

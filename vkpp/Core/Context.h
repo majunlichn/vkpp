@@ -36,11 +36,21 @@ public:
         return m_queues[family].get();
     }
 
+    void WaitIdle();
+
+    void ReadBuffer(Buffer* buffer, void* dest, VkDeviceSize offset, VkDeviceSize size);
+    void ReadBuffer(Buffer* buffer, void* dest);
+    void WriteBuffer(Buffer* buffer, const void* data, VkDeviceSize offset, VkDeviceSize size);
+    void WriteBuffer(Buffer* buffer, const void* data);
+
     rad::Ref<Instance> m_instance;
     rad::Ref<Device> m_device;
     rad::Ref<Queue> m_queues[QueueFamilyCount];
 
-    uint32_t m_frameBufferCount = 0;
+    VkExtent2D m_resolution = {};
+    uint32_t m_swapchainImageCount = 3;
+    VkFormat m_colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    VkFormat m_depthStencilFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
 }; // class Context
 

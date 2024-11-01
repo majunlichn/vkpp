@@ -83,6 +83,7 @@ bool SceneImporter::Import(std::string_view fileName)
             m_scene->m_cameras.reserve(m_scene->m_cameras.size() + m_cameras.size());
             m_scene->m_cameras.insert(m_scene->m_cameras.end(), m_cameras.begin(), m_cameras.end());
         }
+        m_scene->m_root->m_children.push_back(m_rootNode);
         return true;
     }
     else
@@ -252,6 +253,17 @@ rad::Ref<Mesh> SceneImporter::ImportMesh(const aiMesh* meshData)
 
     mesh->m_aabb.m_min = ToVec3(meshData->mAABB.mMin);
     mesh->m_aabb.m_max = ToVec3(meshData->mAABB.mMax);
+
+    if (mesh->m_primitiveType == PrimitiveType::Triangle)
+    {
+        if (mesh->m_positions.size() > 0 &&
+            mesh->m_normals.size() > 0 &&
+            mesh->m_tangents.size() > 0 &&
+            mesh->m_uvChannels.size() == 1)
+        {
+            mesh->m_renderType = RenderType::TriangleListTextured;
+        }
+    }
 
     return mesh;
 }
@@ -475,7 +487,7 @@ void SceneImporter::ImportNodes(SceneNode* node, const aiNode* nodeData)
         node->m_meshes.push_back(m_meshes[nodeData->mMeshes[i]]);
     }
 
-    for (unsigned int i = 0; i < nodeData->mNumChildren; i++)
+    for (unsigned int i = 0; i < nodeData->mNumChildren; ++i)
     {
         rad::Ref<SceneNode> child = new SceneNode(node->m_scene, node);
         ImportNodes(child.get(), nodeData->mChildren[i]);

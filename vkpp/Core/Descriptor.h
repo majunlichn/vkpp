@@ -65,11 +65,17 @@ public:
         uint32_t binding,
         uint32_t arrayElement,
         rad::Span<VkDescriptorBufferInfo> bufferInfos);
+    template<typename SamplerPtrs>
+    void UpdateSamplers(
+        uint32_t binding,
+        uint32_t arrayElement,
+        SamplerPtrs& samplers);
+    template<typename ImageViewPtrs>
     void UpdateImages(
         uint32_t binding,
         uint32_t arrayElement,
         VkDescriptorType type,
-        rad::Span<ImageView*> imageViews,
+        ImageViewPtrs& imageViews,
         rad::Span<VkImageLayout> layouts);
     void UpdateCombinedImageSamplers(
         uint32_t binding,
@@ -85,5 +91,60 @@ private:
     VkDescriptorSet                 m_handle = VK_NULL_HANDLE;
 
 }; // class DescriptorSet
+
+template<typename SamplerPtrs>
+inline void DescriptorSet::UpdateSamplers(
+    uint32_t binding, uint32_t arrayElement, SamplerPtrs& samplers)
+{
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.pNext = nullptr;
+    write.dstSet = m_handle;
+    write.dstBinding = binding;
+    write.dstArrayElement = arrayElement;
+    write.descriptorCount = static_cast<uint32_t>(samplers.size());
+    write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+
+    std::vector<VkDescriptorImageInfo> samplerInfos(samplers.size());
+    for (size_t i = 0; i < samplerInfos.size(); i++)
+    {
+        samplerInfos[i].sampler = samplers[i]->GetHandle();
+    }
+
+    write.pImageInfo = samplerInfos.data();
+    write.pBufferInfo = nullptr;
+    write.pTexelBufferView = nullptr;
+
+    Update(write);
+}
+
+template<typename ImageViewPtrs>
+void DescriptorSet::UpdateImages(
+    uint32_t binding, uint32_t arrayElement, VkDescriptorType type,
+    ImageViewPtrs& imageViews, rad::Span<VkImageLayout> layouts)
+{
+    VkWriteDescriptorSet write = {};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.pNext = nullptr;
+    write.dstSet = m_handle;
+    write.dstBinding = binding;
+    write.dstArrayElement = arrayElement;
+    write.descriptorCount = static_cast<uint32_t>(imageViews.size());
+    write.descriptorType = type;
+
+    std::vector<VkDescriptorImageInfo> imageInfos(imageViews.size());
+    for (size_t i = 0; i < imageViews.size(); i++)
+    {
+        imageInfos[i].sampler = VK_NULL_HANDLE;
+        imageInfos[i].imageView = imageViews[i]->GetHandle();
+        imageInfos[i].imageLayout = layouts[i];
+    }
+
+    write.pImageInfo = imageInfos.data();
+    write.pBufferInfo = nullptr;
+    write.pTexelBufferView = nullptr;
+
+    Update(write);
+}
 
 } // namespace vkpp

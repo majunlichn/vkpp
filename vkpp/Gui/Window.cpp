@@ -126,8 +126,6 @@ void Window::Resize(int width, int height)
     Device* device = m_context->GetDevice();
     Queue* queue = m_context->GetQueue();
 
-    device->WaitIdle();
-
     if (!device->IsSurfaceSupported(queue->GetQueueFamily(), m_surface.get()))
     {
         VKPP_LOG(err, "GPU \"{}\" doesn't support the window surface {}  (ID={}, Title=\"{}\")!",
@@ -140,23 +138,27 @@ void Window::Resize(int width, int height)
     m_surfaceFormats = device->GetPhysicalDevice()->GetSurfaceFormats(m_surface->GetHandle());
     m_presentModes = device->GetPhysicalDevice()->GetSurfacePresentModes(m_surface->GetHandle());
 
-    m_frameBufferCount = 3;
-    if (m_frameBufferCount < m_surfaceCaps.minImageCount)
+    auto& swapchainImageCount = m_context->m_swapchainImageCount;
+    if (swapchainImageCount < m_surfaceCaps.minImageCount)
     {
-        m_frameBufferCount = m_surfaceCaps.minImageCount;
+        swapchainImageCount = m_surfaceCaps.minImageCount;
     }
     if ((m_surfaceCaps.maxImageCount > 0) &&
-        (m_frameBufferCount > m_surfaceCaps.maxImageCount))
+        (swapchainImageCount > m_surfaceCaps.maxImageCount))
     {
-        m_frameBufferCount = m_surfaceCaps.maxImageCount;
+        swapchainImageCount = m_surfaceCaps.maxImageCount;
     }
-    m_context->m_frameBufferCount = m_frameBufferCount;
 
-    // TODO: render scale?
-    VkFormat colorFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    m_renderTarget = device->CreateImage2DRenderTarget(
-        colorFormat, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
-    m_renderTargetView = m_renderTarget->CreateDefaultView();
+    if (!m_renderTarget)
+    {
+        // TODO: render scale?
+        m_renderTarget = device->CreateImage2DRenderTarget(
+            m_context->m_colorFormat, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
+    }
+    if (!m_renderTargetView)
+    {
+        m_renderTargetView = m_renderTarget->CreateDefaultView();
+    }
 
     m_overlay = device->CreateImage2DRenderTarget(
         VK_FORMAT_R8G8B8A8_UNORM, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
@@ -170,13 +172,10 @@ void Window::Resize(int width, int height)
 
     m_cmdPool = device->CreateCommandPool(queue->GetQueueFamily(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    if (m_cmdBuffers.size() != m_frameBufferCount)
+    m_cmdBuffers.resize(swapchainImageCount);
+    for (uint32_t i = 0; i < m_cmdBuffers.size(); ++i)
     {
-        m_cmdBuffers.resize(m_frameBufferCount);
-        for (uint32_t i = 0; i < m_cmdBuffers.size(); ++i)
-        {
-            m_cmdBuffers[i] = m_cmdPool->Allocate();
-        }
+        m_cmdBuffers[i] = m_cmdPool->Allocate();
     }
 
     // Init synchronization primitives.
@@ -194,6 +193,8 @@ void Window::Resize()
     int height = 0;
     GetSizeInPixels(&width, &height);
     Resize(width, height);
+    m_context->m_resolution.width = width;
+    m_context->m_resolution.height = height;
 }
 
 bool Window::CreateSamplers()
@@ -273,7 +274,7 @@ bool Window::CreateSwapchain(uint32_t width, uint32_t height)
         m_surfaceFormat.format = VK_FORMAT_R8G8B8A8_UNORM;
     }
 
-    if (vkuFormatElementSize(m_renderTarget->GetFormat()) >= 32)
+    if (vkuFormatElementSize(m_context->m_colorFormat) >= 32)
     {
         for (size_t i = 0; i < m_surfaceFormats.size(); i++)
         {
@@ -382,7 +383,7 @@ bool Window::CreateBlitPipeline()
         { VK_SHADER_STAGE_FRAGMENT_BIT, frag, nullptr },
     };
     pipelineInfo->m_inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    pipelineInfo->DisableColorBlend(1);
+    pipelineInfo->SetColorBlendDisabled(1);
     pipelineInfo->m_layout = m_blitPipelineLayout;
     pipelineInfo->SetRenderingInfo(m_surfaceFormat.format);
     m_blitPipeline = device->CreateGraphicsPipeline(pipelineInfo->Setup());
@@ -402,48 +403,54 @@ bool Window::CreateBlitPipeline()
 
 void Window::UpdateBlitBindings()
 {
-    if (m_blitDescSet && m_renderTarget)
+    if (m_blitDescSet)
     {
-        VkWriteDescriptorSet write = {};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.pNext = nullptr;
-        write.dstSet = m_blitDescSet->GetHandle();
-        write.dstBinding = 0;
-        write.dstArrayElement = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        VkDescriptorImageInfo imageInfo = {};
+        VkWriteDescriptorSet writes[2] = {};
+
+        writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].pNext = nullptr;
+        writes[0].dstSet = m_blitDescSet->GetHandle();
+        writes[0].dstBinding = 0;
+        writes[0].dstArrayElement = 0;
+        writes[0].descriptorCount = 1;
+        writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        VkDescriptorImageInfo renderTargetInfo = {};
         if (m_renderTarget->GetWidth() <= m_swapchain->GetWidth() &&
             m_renderTarget->GetHeight() <= m_swapchain->GetHeight())
         {
-            imageInfo.sampler = m_samplerNearest->GetHandle();
+            renderTargetInfo.sampler = m_samplerNearest->GetHandle();
         }
         else
         {
-            imageInfo.sampler = m_samplerLinear->GetHandle();
+            renderTargetInfo.sampler = m_samplerLinear->GetHandle();
         }
-        imageInfo.imageView = m_renderTargetView->GetHandle();
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        write.pImageInfo = &imageInfo;
-        m_blitDescSet->Update(write);
-    }
+        renderTargetInfo.imageView = m_renderTargetView->GetHandle();
+        renderTargetInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        writes[0].pImageInfo = &renderTargetInfo;
 
-    if (m_blitDescSet && m_overlay)
+        writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[1].pNext = nullptr;
+        writes[1].dstSet = m_blitDescSet->GetHandle();
+        writes[1].dstBinding = 1;
+        writes[1].dstArrayElement = 0;
+        writes[1].descriptorCount = 1;
+        writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        VkDescriptorImageInfo overlayInfo = {};
+        renderTargetInfo.sampler = m_samplerNearest->GetHandle();
+        renderTargetInfo.imageView = m_overlayView->GetHandle();
+        renderTargetInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        writes[1].pImageInfo = &renderTargetInfo;
+
+        m_blitDescSet->Update(writes);
+    }
+}
+
+void Window::SetRenderTarget(rad::Ref<Image> renderTarget, rad::Ref<ImageView> renderTargetView)
+{
+    m_renderTarget = renderTarget;
+    if (!renderTargetView)
     {
-        VkWriteDescriptorSet write = {};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.pNext = nullptr;
-        write.dstSet = m_blitDescSet->GetHandle();
-        write.dstBinding = 1;
-        write.dstArrayElement = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        VkDescriptorImageInfo imageInfo = {};
-        imageInfo.sampler = m_samplerNearest->GetHandle();
-        imageInfo.imageView = m_overlayView->GetHandle();
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        write.pImageInfo = &imageInfo;
-        m_blitDescSet->Update(write);
+        m_renderTargetView = renderTarget->CreateDefaultView();
     }
 }
 
