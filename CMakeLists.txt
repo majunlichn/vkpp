@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
 
-if (DEFINED ENV{VCPKG_ROOT})
+if ((NOT DEFINED CMAKE_TOOLCHAIN_FILE) AND (DEFINED ENV{VCPKG_ROOT}))
     list(APPEND CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 endif()
 message("CMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
 
 project(vkpp)
 
-option(VKPP_BUILD_SAMPLES "Build samples." ON)
+if(CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
+    set(VKPP_SUBPROJECT OFF)
+else()
+    set(VKPP_SUBPROJECT ON)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -21,7 +25,6 @@ include_directories(
 )
 
 if (NOT TARGET rad)
-    set(RAD_BUILD_TESTS OFF)
     add_subdirectory(imported/radcpp)
 endif()
 
@@ -52,12 +55,11 @@ if (WIN32)
 endif()
 
 if (NOT TARGET sdlpp)
-    set(SDLPP_BUILD_SAMPLES OFF)
     set(VULKAN_INCLUDE_DIR ${VKPP_ROOT}/imported/Vulkan-Headers/include)
     add_subdirectory(imported/sdlpp)
 endif()
 add_subdirectory(vkpp)
 
-if (VKPP_BUILD_SAMPLES)
+if (NOT ${VKPP_SUBPROJECT})
     add_subdirectory(samples/VulkanViewer)
 endif()
