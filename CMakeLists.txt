@@ -28,6 +28,14 @@ if (NOT TARGET rad)
     add_subdirectory(imported/radcpp)
 endif()
 
+add_library(shaderc SHARED IMPORTED GLOBAL)
+if (WIN32)
+    set_target_properties(shaderc PROPERTIES
+        IMPORTED_LOCATION $ENV{VULKAN_SDK}/Bin/shaderc_shared.dll
+        IMPORTED_IMPLIB $ENV{VULKAN_SDK}/Lib/shaderc_shared.lib
+    )
+endif()
+
 set(Compressonator_INSTALL_DIR "C:/Compressonator_4.5.52")
 
 add_library(CMP_Core SHARED IMPORTED GLOBAL)

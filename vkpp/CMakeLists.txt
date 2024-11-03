@@ -39,6 +39,7 @@ set(VKPP_SOURCE_FILES
     Core/Swapchain.cpp
     Core/ShaderCompiler.h
     Core/ShaderCompiler.cpp
+    Core/ShaderIncluder.h
     Core/Context.h
     Core/Context.cpp
     Gui/Window.h
@@ -61,6 +62,7 @@ set(VKPP_SOURCE_FILES
     Rendering/SceneImporter.cpp
     Rendering/SolidRenderer.h
     Rendering/SolidRenderer.cpp
+    Shaders/Common/Hash.glsl
     Shaders/Gui/BlitToSwapchain.vert
     Shaders/Gui/BlitToSwapchain.frag
     Shaders/Rendering/Solid.glsl
@@ -78,7 +80,7 @@ target_include_directories(vkpp
     PUBLIC ${VKPP_ROOT}/imported/volk
     PUBLIC ${VKPP_ROOT}/imported/Vulkan-Utility-Libraries/include
     PUBLIC ${VKPP_ROOT}/imported/VulkanMemoryAllocator/include
-    PUBLIC ${VKPP_ROOT}/imported/spvgen/include
+    PUBLIC $ENV{VULKAN_SDK}/Include
 )
 
 target_link_libraries(vkpp
@@ -91,6 +93,10 @@ target_link_libraries(vkpp PUBLIC glm::glm)
 
 target_include_directories(vkpp
     PUBLIC ${Compressonator_INSTALL_DIR}/include
+)
+
+target_link_libraries(vkpp
+    PUBLIC shaderc
 )
 
 target_link_libraries(vkpp

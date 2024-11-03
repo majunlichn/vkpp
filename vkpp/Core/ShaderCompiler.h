@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vkpp/Core/Common.h>
-#include <spvgen.h>
+#include <shaderc/shaderc.hpp>
+#include "ShaderIncluder.h"
 
 namespace vkpp
 {
@@ -35,30 +36,34 @@ struct ShaderMacro
 
 }; // class ShaderMacro
 
+extern std::string g_shaderPath;
+
 class ShaderCompiler : public rad::RefCounted<ShaderCompiler>
 {
 public:
     ShaderCompiler();
     ~ShaderCompiler();
 
-    std::vector<uint32_t> Assemble(
-        VkShaderStageFlagBits stage, std::string_view fileName, std::string_view source);
-    std::vector<uint32_t> Compile(
-        VkShaderStageFlagBits stage, std::string_view fileName, std::string_view source,
-        std::string_view entryPoint = "main", rad::Span<ShaderMacro> macros = {},
-        uint32_t options = SpvGenOptionVulkanRules);
-    std::vector<uint32_t> CompileFromFile(
-        VkShaderStageFlagBits stage, std::string_view fileName,
-        std::string_view entryPoint = "main", rad::Span<ShaderMacro> macros = {},
-        uint32_t options = SpvGenOptionVulkanRules);
+    void AddIncludeDir(std::string includeDir)
+    {
+        m_fileFinder.search_path().push_back(std::move(includeDir));
+    }
 
-    const char* GetLog() const { return m_log.c_str(); }
+    std::string PreprocessGLSL(
+        VkShaderStageFlagBits stage, const std::string& fileName, const std::string& source,
+        const std::string& entryPoint = "main", rad::Span<ShaderMacro> macros = {});
+    std::vector<uint32_t> CompileGLSL(
+        VkShaderStageFlagBits stage, const std::string& fileName, const std::string& source,
+        const std::string& entryPoint = "main", rad::Span<ShaderMacro> macros = {});
+    std::vector<uint32_t> CompileGLSLFromFile(
+        VkShaderStageFlagBits stage, const std::string& fileName,
+        const std::string& entryPoint, rad::Span<ShaderMacro> macros);
 
 private:
+    shaderc::Compiler m_compiler;
     std::string m_log;
+    FileFinder m_fileFinder;
 
 }; // class ShaderCompiler
-
-void SetShaderPath(std::string shaderPath);
 
 } // namespace vkpp

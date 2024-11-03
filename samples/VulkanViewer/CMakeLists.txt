@@ -21,10 +21,3 @@ add_custom_command(TARGET VulkanViewer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${VKPP_ROOT}/vkpp/Shaders/ $<TARGET_FILE_DIR:VulkanViewer>/Shaders/
     COMMAND_EXPAND_LISTS
 )
-
-if(WIN32)
-add_custom_command(TARGET VulkanViewer POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${VKPP_ROOT}/imported/spvgen/build/Release/spvgen.dll $<TARGET_FILE_DIR:VulkanViewer>
-    COMMAND_EXPAND_LISTS
-)
-endif()

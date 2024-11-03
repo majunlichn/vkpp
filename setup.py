@@ -28,19 +28,11 @@ def remove_dir(dir : str):
     if os.path.isdir(str):
         shutil.rmtree(dir)
 
-def build_spvgen():
-    chdir(script_root + "/imported/spvgen/external")
-    run("python fetch_external_sources.py")
-    chdir(script_root + "/imported/spvgen")
-    run("cmake -S . -B build")
-    run("cmake --build build --target spvgen --config Release")
-
 def main() -> int:
     try:
         chdir(script_root)
         chdir(script_root + "/imported/sdlpp")
         run("python setup.py")
-        build_spvgen()
         chdir(script_root)
         run("cmake -S . -B build")
         chdir(working_dir_before_execute)

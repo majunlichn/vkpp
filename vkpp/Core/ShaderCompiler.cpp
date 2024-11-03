@@ -1,4 +1,3 @@
-#define SPVGEN_STATIC_LIB
 #include <vkpp/Core/ShaderCompiler.h>
 #include <vkpp/Core/Pipeline.h>
 #include <rad/IO/File.h>
@@ -7,111 +6,106 @@
 namespace vkpp
 {
 
+std::string g_shaderPath = rad::getenv("VKPP_SHADER_PATH");
+
 ShaderCompiler::ShaderCompiler()
 {
-    if (!InitSpvGen())
+    if (!g_shaderPath.empty())
     {
-        VKPP_LOG(err, "InitSpvGen failed!");
+        m_fileFinder.search_path().push_back(g_shaderPath);
     }
 }
 
 ShaderCompiler::~ShaderCompiler()
 {
-    FinalizeSpvgen();
 }
 
-std::vector<uint32_t> ShaderCompiler::Assemble(
-    VkShaderStageFlagBits stage, std::string_view fileName, std::string_view source)
+shaderc_shader_kind GetShaderKind(VkShaderStageFlagBits stage)
 {
-    std::vector<uint32_t> binary;
-    unsigned int* buffer = nullptr;
-    m_log.clear();
-    const char* log = nullptr;
-    size_t bufferSize = spvAssembleSpirv(
-        source.data(), static_cast<uint32_t>(source.size()), buffer, &log);
-    if (buffer && (bufferSize > 0) && ((bufferSize % 4) == 0))
-    {
-        binary.resize(bufferSize / 4);
-        memcpy(binary.data(), buffer, bufferSize);
-        m_log.clear();
-    }
-    else
-    {
-        m_log = log;
-    }
-    spvFreeBuffer(buffer);
-    return binary;
-}
-
-std::vector<uint32_t> ShaderCompiler::Compile(
-    VkShaderStageFlagBits stage, std::string_view fileName, std::string_view source,
-    std::string_view entryPoint, rad::Span<ShaderMacro> macros, uint32_t options)
-{
-    std::vector<uint32_t> binary;
-    SpvGenStage spvStage = SpvGenStageInvalid;
-    int sourceStringCount = 1;
-    const char* stageSources[] = { source.data() };
-    const char* stageFiles[] = { fileName.data() };
-    const char* const* sourceList[] = { stageSources };
-    const char* const* fileList[] = { stageFiles };
-    const char* entryPoints[] = { entryPoint.data() };
-    void* program = nullptr;
-    m_log.clear();
-    const char* log = nullptr;
     switch (stage)
     {
-    case VK_SHADER_STAGE_VERTEX_BIT:                    spvStage = SpvGenStageVertex;               break;
-    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT:      spvStage = SpvGenStageTessControl;          break;
-    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT:   spvStage = SpvGenStageTessEvaluation;       break;
-    case VK_SHADER_STAGE_GEOMETRY_BIT:                  spvStage = SpvGenStageGeometry;             break;
-    case VK_SHADER_STAGE_FRAGMENT_BIT:                  spvStage = SpvGenStageFragment;             break;
-    case VK_SHADER_STAGE_COMPUTE_BIT:                   spvStage = SpvGenStageCompute;              break;
-    case VK_SHADER_STAGE_RAYGEN_BIT_KHR:                spvStage = SpvGenStageRayTracingRayGen;     break;
-    case VK_SHADER_STAGE_ANY_HIT_BIT_KHR:               spvStage = SpvGenStageRayTracingAnyHit;     break;
-    case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR:           spvStage = SpvGenStageRayTracingClosestHit; break;
-    case VK_SHADER_STAGE_MISS_BIT_KHR:                  spvStage = SpvGenStageRayTracingMiss;       break;
-    case VK_SHADER_STAGE_INTERSECTION_BIT_KHR:          spvStage = SpvGenStageRayTracingIntersect;  break;
-    case VK_SHADER_STAGE_CALLABLE_BIT_KHR:              spvStage = SpvGenStageRayTracingCallable;   break;
-    case VK_SHADER_STAGE_TASK_BIT_NV:                   spvStage = SpvGenStageTask;                 break;
-    case VK_SHADER_STAGE_MESH_BIT_NV:                   spvStage = SpvGenStageMesh;                 break;
+    case VK_SHADER_STAGE_VERTEX_BIT: return shaderc_vertex_shader;
+    case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return shaderc_tess_control_shader;
+    case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return shaderc_tess_evaluation_shader;
+    case VK_SHADER_STAGE_GEOMETRY_BIT: return shaderc_geometry_shader;
+    case VK_SHADER_STAGE_FRAGMENT_BIT: return shaderc_fragment_shader;
+    case VK_SHADER_STAGE_COMPUTE_BIT: return shaderc_compute_shader;
+    case VK_SHADER_STAGE_RAYGEN_BIT_KHR: return shaderc_raygen_shader;
+    case VK_SHADER_STAGE_ANY_HIT_BIT_KHR: return shaderc_anyhit_shader;
+    case VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR: return shaderc_closesthit_shader;
+    case VK_SHADER_STAGE_MISS_BIT_KHR: return shaderc_miss_shader;
+    case VK_SHADER_STAGE_INTERSECTION_BIT_KHR: return shaderc_intersection_shader;
+    case VK_SHADER_STAGE_CALLABLE_BIT_KHR: return shaderc_callable_shader;
+    case VK_SHADER_STAGE_TASK_BIT_EXT: return shaderc_task_shader;
+    case VK_SHADER_STAGE_MESH_BIT_EXT: return shaderc_mesh_shader;
+    }
+    return shaderc_glsl_infer_from_source;
+}
+
+std::string ShaderCompiler::PreprocessGLSL(
+    VkShaderStageFlagBits stage, const std::string& fileName, const std::string& source,
+    const std::string& entryPoint, rad::Span<ShaderMacro> macros)
+{
+    shaderc::CompileOptions options;
+
+    for (const auto& macro : macros)
+    {
+        options.AddMacroDefinition(macro.m_name, macro.m_definition);
+    }
+    if (!rad::StrEqual(entryPoint, "main"))
+    {
+        options.AddMacroDefinition(entryPoint, "main");
     }
 
-    options |= SpvGenOptionVulkanRules;
-
-    bool result = spvCompileAndLinkProgramEx(
-        1, &spvStage,
-        &sourceStringCount, sourceList, fileList, entryPoints,
-        &program, &log,
-        options);
-
-    if (result)
+    shaderc::PreprocessedSourceCompilationResult result =
+        m_compiler.PreprocessGlsl(source, GetShaderKind(stage), fileName.c_str(), options);
+    if (result.GetCompilationStatus() == shaderc_compilation_status_success)
     {
-        const uint32_t* buffer = nullptr;
-        int binarySize = spvGetSpirvBinaryFromProgram(program, 0, &buffer);
-        assert((binarySize > 0) && ((binarySize % 4) == 0));
-        binary.resize(binarySize / sizeof(uint32_t));
-        memcpy(binary.data(), buffer, binarySize);
-        m_log.clear();
+        return { result.cbegin(), result.cend() };
     }
     else
     {
-        m_log = log;
+        m_log = result.GetErrorMessage();
+        return {};
+    }
+}
+
+std::vector<uint32_t> ShaderCompiler::CompileGLSL(
+    VkShaderStageFlagBits stage, const std::string& fileName, const std::string& source,
+    const std::string& entryPoint, rad::Span<ShaderMacro> macros)
+{
+    shaderc::CompileOptions options;
+    for (const ShaderMacro& macro : macros)
+    {
+        options.AddMacroDefinition(macro.m_name, macro.m_definition);
+    }
+    if (!rad::StrEqual(entryPoint, "main"))
+    {
+        options.AddMacroDefinition(entryPoint, "main");
     }
 
-    spvFreeBuffer(program);
-    return binary;
+    std::unique_ptr<FileIncluder> includer(
+        RAD_NEW FileIncluder(&m_fileFinder));
+    options.SetIncluder(std::move(includer));
+
+    shaderc::SpvCompilationResult result =
+        m_compiler.CompileGlslToSpv(source, GetShaderKind(stage), fileName.c_str(), options);
+
+    if (result.GetCompilationStatus() == shaderc_compilation_status_success)
+    {
+        return { result.cbegin(), result.cend() };
+    }
+    else
+    {
+        m_log = result.GetErrorMessage();
+        VKPP_LOG(err, "CompileGLSL \"{}\":\n {}", fileName, m_log);
+        return {};
+    }
 }
 
-static std::string g_shaderPath = rad::getenv("VKPP_SHADER_PATH");
-
-void SetShaderPath(std::string shaderPath)
-{
-    g_shaderPath = std::move(shaderPath);
-}
-
-std::vector<uint32_t> ShaderCompiler::CompileFromFile(
-    VkShaderStageFlagBits stage, std::string_view fileName,
-    std::string_view entryPoint, rad::Span<ShaderMacro> macros, uint32_t options)
+std::vector<uint32_t> ShaderCompiler::CompileGLSLFromFile(
+    VkShaderStageFlagBits stage, const std::string& fileName,
+    const std::string& entryPoint, rad::Span<ShaderMacro> macros)
 {
     std::string path(fileName);
     if (!fileName.empty())
@@ -121,7 +115,7 @@ std::vector<uint32_t> ShaderCompiler::CompileFromFile(
             path = g_shaderPath + "/" + path;
         }
     }
-    return Compile(stage, path, rad::File::ReadAll(path), entryPoint, macros);
+    return CompileGLSL(stage, path, rad::File::ReadAll(path), entryPoint, macros);
 }
 
 } // namespace vkpp

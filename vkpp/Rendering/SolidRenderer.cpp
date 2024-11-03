@@ -90,20 +90,12 @@ bool SolidRenderer::LoadScene(Scene* scene)
         { m_frameDescSetLayout.get(), m_sceneDescSetLayout.get() });
     GraphicsPipelineCreateInfo pipelineInfo(device);
     rad::Ref<ShaderCompiler> shaderCompiler = RAD_NEW ShaderCompiler();
-    auto vertBinary = shaderCompiler->CompileFromFile(VK_SHADER_STAGE_VERTEX_BIT,
+    auto vertBinary = shaderCompiler->CompileGLSLFromFile(VK_SHADER_STAGE_VERTEX_BIT,
         "Rendering/Solid.vert",
         "main", {});
-    if (vertBinary.empty())
-    {
-        VKPP_LOG(err, "Failed to compile: Rendering/Solid.vert: \n{}", shaderCompiler->GetLog());
-    }
-    auto fragBinary = shaderCompiler->CompileFromFile(VK_SHADER_STAGE_FRAGMENT_BIT,
+    auto fragBinary = shaderCompiler->CompileGLSLFromFile(VK_SHADER_STAGE_FRAGMENT_BIT,
         "Rendering/Solid.frag",
         "main", {});
-    if (fragBinary.empty())
-    {
-        VKPP_LOG(err, "Failed to compile: Rendering/Solid.frag: \n{}", shaderCompiler->GetLog());
-    }
     rad::Ref<ShaderModule> vert = device->CreateShaderModule(vertBinary);
     rad::Ref<ShaderModule> frag = device->CreateShaderModule(fragBinary);
     pipelineInfo.m_shaderStages =

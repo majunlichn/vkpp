@@ -1,4 +1,5 @@
 #include <vkpp/Gui/Window.h>
+#include <vkpp/Core/ShaderCompiler.h>
 #include <SDL3/SDL_vulkan.h>
 #include <rad/Core/Flags.h>
 
@@ -367,14 +368,11 @@ bool Window::CreateBlitPipeline()
 
     rad::Ref<GraphicsPipelineCreateInfo> pipelineInfo =
         RAD_NEW GraphicsPipelineCreateInfo(device);
-    uint32_t vertBinary[] =
-    {
-#include <vkpp/Shaders/Compiled/Gui/BlitToSwapchain.vert.inc>
-    };
-    uint32_t fragBinary[] =
-    {
-#include <vkpp/Shaders/Compiled/Gui/BlitToSwapchain.frag.inc>
-    };
+    ShaderCompiler shaderCompiler;
+    auto vertBinary = shaderCompiler.CompileGLSLFromFile(
+        VK_SHADER_STAGE_VERTEX_BIT, "Gui/BlitToSwapchain.vert", "main", {});
+    auto fragBinary = shaderCompiler.CompileGLSLFromFile(
+        VK_SHADER_STAGE_FRAGMENT_BIT, "Gui/BlitToSwapchain.frag", "main", {});
     rad::Ref<ShaderModule> vert = device->CreateShaderModule(vertBinary);
     rad::Ref<ShaderModule> frag = device->CreateShaderModule(fragBinary);
     pipelineInfo->m_shaderStages =
