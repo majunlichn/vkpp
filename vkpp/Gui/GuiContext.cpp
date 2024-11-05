@@ -43,6 +43,13 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
     ImGuiStyle* style = &ImGui::GetStyle();
     style->GrabRounding = 4.0f;
 
+    int width = 0;
+    int height = 0;
+    m_window->GetSizeInPixels(&width, &height);
+    m_renderTarget = device->CreateImage2DRenderTarget(
+        m_renderTargetFormat, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
+    m_renderTargetView = m_renderTarget->CreateDefaultView();
+
     std::vector<VkDescriptorPoolSize> defaultDescPoolSizes =
     {
         { VK_DESCRIPTOR_TYPE_SAMPLER, 128 },
@@ -92,7 +99,7 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
     renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
     renderingInfo.pNext = nullptr;
     renderingInfo.viewMask = 0;
-    VkFormat format = m_window->GetOverlayFormat();
+    VkFormat format = m_renderTargetFormat;
     renderingInfo.colorAttachmentCount = 1;
     renderingInfo.pColorAttachmentFormats = &format;
     renderingInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
@@ -160,16 +167,14 @@ void GuiContext::Render()
 
     CommandBuffer* cmdBuffer = m_cmdBuffers[m_cmdBufferIndex].get();
     cmdBuffer->Begin();
-    Image* overlay = m_window->GetOverlay();
-    ImageView* overlayView = m_window->GetOverlayView();
-    if (overlay->GetCurrentLayout() != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+    if (m_renderTarget->GetCurrentLayout() != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
     {
-        cmdBuffer->TransitLayoutFromCurrent(overlay,
+        cmdBuffer->TransitLayoutFromCurrent(m_renderTarget.get(),
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }
-    cmdBuffer->BeginRendering(m_window->GetOverlayView(), &m_clearValue);
+    cmdBuffer->BeginRendering(m_renderTargetView.get(), &m_clearValue);
     ImDrawData* drawData = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(drawData, cmdBuffer->GetHandle());
     cmdBuffer->EndRendering();

@@ -21,7 +21,7 @@ public:
         Perspective,
         Orthographic,
     };
-    Type m_type = Type::Orthographic;
+    Type m_type = Type::Perspective;
 
     glm::vec3 m_position = { 0, 0, 0 };
     glm::vec3 m_lookAt = { 0, 0, 1 };

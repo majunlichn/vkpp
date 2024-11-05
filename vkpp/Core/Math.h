@@ -127,7 +127,6 @@ inline AABB Unite(const AABB& b, const glm::vec3& p)
     return ret;
 }
 
-template<typename float>
 inline AABB Unite(const AABB& b1, const AABB& b2)
 {
     AABB ret;
@@ -136,7 +135,6 @@ inline AABB Unite(const AABB& b1, const AABB& b2)
     return ret;
 }
 
-template<typename float>
 inline AABB Intersect(const AABB& b1, const AABB& b2)
 {
     AABB ret;
@@ -145,7 +143,6 @@ inline AABB Intersect(const AABB& b1, const AABB& b2)
     return ret;
 }
 
-template<typename float>
 inline bool HasOverlap(const AABB& b1, const AABB& b2)
 {
     bool x = (b1.m_max.x >= b2.m_min.x) && (b1.m_min.x <= b2.m_max.x);
@@ -154,7 +151,6 @@ inline bool HasOverlap(const AABB& b1, const AABB& b2)
     return (x && y && z);
 }
 
-template<typename float>
 inline bool IsInside(const glm::vec3& p, const AABB& b)
 {
     return (
@@ -163,7 +159,6 @@ inline bool IsInside(const glm::vec3& p, const AABB& b)
         (p.z >= b.m_min.z) && (p.z <= b.m_max.z));
 }
 
-template<typename float>
 inline bool IsInsideExclusive(const glm::vec3& p, const AABB& b)
 {
     return (
@@ -172,12 +167,28 @@ inline bool IsInsideExclusive(const glm::vec3& p, const AABB& b)
         (p.z >= b.m_min.z) && (p.z < b.m_max.z));
 }
 
-template<typename float, typename U>
-inline AABB Expand(const AABB& b, U delta)
+inline AABB Expand(const AABB& b, float delta)
 {
     AABB ret;
     ret.m_min = b.m_min - glm::vec3(delta, delta, delta);
     ret.m_max = b.m_max + glm::vec3(delta, delta, delta);
+    return ret;
+}
+
+inline AABB Transform(const AABB& box, const glm::mat4& mat)
+{
+    if (box.IsEmpty())
+    {
+        return box;
+    }
+    AABB ret;
+    for (int i = 0; i < 8; ++i)
+    {
+        glm::vec3 corner = box.GetCorner(i);
+        corner = glm::vec4(corner, 1.0f) * mat;
+        ret.m_min = glm::min(ret.m_min, corner);
+        ret.m_max = glm::max(ret.m_max, corner);
+    }
     return ret;
 }
 

@@ -29,6 +29,7 @@ public:
     std::vector<rad::Ref<Material>> m_materials;
     std::vector<rad::Ref<Light>> m_lights;
     std::vector<rad::Ref<Camera>> m_cameras;
+    rad::Ref<Camera> m_camera;
 
     // AbsolutePath=>Index
     std::map<std::string, size_t, rad::StringLess> m_imagePathIndexMap;
@@ -44,6 +45,12 @@ public:
         }
         return nullptr;
     }
+
+    AABB GetBoundingBox() const;
+
+    // glTF uses a right-handed coordinate system.
+    // glTF defines +Y as up, +Z as forward, and -X as right; the front of a glTF asset faces +Z.
+    void SetCameraFrontView();
 
 }; // class Scene
 

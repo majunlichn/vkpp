@@ -12,6 +12,8 @@ SceneNode::SceneNode(Scene* scene, SceneNode* parent) :
     m_scene(scene),
     m_parent(parent)
 {
+    m_transform = glm::identity<glm::mat4>();
+    m_transformToWorld = glm::identity<glm::mat4>();
 }
 
 SceneNode::~SceneNode()
@@ -44,6 +46,27 @@ SceneNode* SceneNode::FindChild(std::string_view name, bool recursive)
         }
     }
     return nullptr;
+}
+
+AABB SceneNode::GetBoundingBox() const
+{
+    AABB nodeBox;
+    if (m_meshes.size() > 0)
+    {
+        for (size_t i = 0; i < m_meshes.size(); ++i)
+        {
+            const AABB& meshBox = m_meshes[i]->m_aabb;
+            nodeBox = Unite(nodeBox, meshBox);
+        }
+        nodeBox = Transform(nodeBox, m_transformToWorld);
+    }
+
+    for (size_t i = 0; i < m_children.size(); ++i)
+    {
+        const AABB& childBox = m_children[i]->GetBoundingBox();
+        nodeBox = Unite(nodeBox, childBox);
+    }
+    return nodeBox;
 }
 
 } // namespace vkpp

@@ -33,6 +33,10 @@ bool VulkanViewer::Init()
         return false;
     }
 
+    SetColorBufferAndOverlay(
+        m_solidRenderer->m_renderTargetView,
+        m_gui->GetRenderTargetView());
+
     if (sdl::GetApp()->GetArgc() > 1)
     {
         m_scene = RAD_NEW vkpp::Scene(m_context);
@@ -40,6 +44,11 @@ bool VulkanViewer::Init()
         std::string fileName = sdl::GetApp()->GetArgv()[1];
         if (importer->Import(fileName))
         {
+            int width = 0;
+            int height = 0;
+            GetSizeInPixels(&width, &height);
+            m_scene->m_camera->m_aspectRatio = float(width) / float(height);
+            m_scene->SetCameraFrontView();
             m_scene->Upload();
             RAD_LOG(m_logger, info, "Scene imported successfully: {}", fileName);
             m_solidRenderer->LoadScene(m_scene.get());
@@ -95,15 +104,23 @@ void VulkanViewer::Resize(int width, int height)
 {
     m_context->WaitIdle();
 
-    m_solidRenderer->Resize(width, height);
-    SetRenderTarget(m_solidRenderer->m_renderTarget, m_solidRenderer->m_renderTargetView);
+    if (m_scene)
+    {
+        m_scene->m_camera->m_aspectRatio = float(width) / float(height);
+    }
 
     vkpp::Window::Resize(width, height);
+
+    m_solidRenderer->Resize(width, height);
+
     m_gui = RAD_NEW vkpp::GuiContext(this);
     if (!m_gui->Init())
     {
         RAD_LOG(m_logger, err, "m_gui->Init() failed!");
     }
+
+    SetColorBufferAndOverlay(
+        m_solidRenderer->m_renderTargetView, m_gui->GetRenderTargetView());
 }
 
 void VulkanViewer::OnKeyDown(const SDL_KeyboardEvent& keyDown)

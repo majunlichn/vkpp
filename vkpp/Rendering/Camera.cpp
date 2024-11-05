@@ -37,7 +37,9 @@ glm::mat4 Camera::GetProjectionMatrix() const
 {
     if (m_type == Type::Perspective)
     {
-        return glm::perspective(m_yfov, m_aspectRatio, m_clipNear, m_clipFar);
+        glm::mat4 proj = glm::perspective(m_yfov, m_aspectRatio, m_clipNear, m_clipFar);
+        proj[1][1] *= -1;
+        return proj;
     }
     else // if (m_type == Type::Orthographic)
     {

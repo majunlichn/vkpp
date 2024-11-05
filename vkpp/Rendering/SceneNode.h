@@ -39,6 +39,8 @@ public:
     glm::mat4 m_transform = glm::identity<glm::mat4>();
     glm::mat4 m_transformToWorld = glm::identity<glm::mat4>();
 
+    AABB GetBoundingBox() const;
+
 }; // class SceneNode
 
 } // namespace vkpp

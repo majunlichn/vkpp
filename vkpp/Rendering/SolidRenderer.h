@@ -37,10 +37,10 @@ public:
     rad::Ref<ImageView> m_depthStencilView;
 
     std::vector<rad::Ref<Buffer>> m_uniformBuffers;
-    uint32_t m_uniformOffset = 0;
-    // Need to be round up to multiple of minUniformBufferOffsetAlignment.
-    VkDeviceSize m_frameInfoStride = sizeof(FrameInfo);
-    VkDeviceSize m_meshInfoStride = sizeof(MeshInfo);
+    std::vector<uint8_t*> m_uniformData;
+    VkDeviceSize m_uniformDataOffset = 0;
+    uint32_t WriteUniforms(void* data, size_t sizeInBytes);
+    uint32_t m_frameInfoOffset = 0;
     rad::Ref<DescriptorSetLayout> m_frameDescSetLayout;
     rad::Ref<DescriptorSetLayout> m_sceneDescSetLayout;
     rad::Ref<PipelineLayout> m_pipelineLayout;

@@ -16,10 +16,8 @@ public:
 
     Context* GetContext() { return m_context.get(); }
     Surface* GetSurface() { return m_surface.get(); }
-    void SetRenderTarget(rad::Ref<Image> renderTarget, rad::Ref<ImageView> renderTargetView);
-    VkFormat GetOverlayFormat() const { return m_overlayFormat; }
-    Image* GetOverlay() { return m_overlay.get(); }
-    ImageView* GetOverlayView() { return m_overlayView.get(); }
+    void SetColorBufferAndOverlay(
+        rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView);
     Swapchain* GetSwapchain() { return m_swapchain.get(); }
     size_t GetFrameIndex() const { return m_frameIndex; }
 
@@ -41,7 +39,6 @@ private:
     bool CreateSamplers();
     bool CreateSwapchain(uint32_t width, uint32_t height);
     bool CreateBlitPipeline();
-    void UpdateBlitBindings();
     void BlitToSwapchain();
     void Present();
 
@@ -51,10 +48,7 @@ private:
     VkSurfaceFormatKHR m_surfaceFormat = {};
     VkPresentModeKHR m_presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
-    rad::Ref<Image> m_renderTarget;
-    rad::Ref<ImageView> m_renderTargetView;
-    VkFormat m_overlayFormat = VK_FORMAT_R8G8B8A8_UNORM;
-    rad::Ref<Image> m_overlay;
+    rad::Ref<ImageView> m_colorBufferView;
     rad::Ref<ImageView> m_overlayView;
     rad::Ref<Sampler> m_samplerNearest;
     rad::Ref<Sampler> m_samplerLinear;

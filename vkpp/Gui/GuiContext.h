@@ -21,6 +21,9 @@ public:
     bool Init(rad::Span<VkDescriptorPoolSize> descPoolSizes = {});
     void Destroy();
 
+    VkFormat GetRenderTargetFormat() const { return m_renderTargetFormat; }
+    ImageView* GetRenderTargetView() { return m_renderTargetView.get(); }
+
     bool ProcessEvent(const SDL_Event& event);
     void NewFrame();
     void Render();
@@ -28,6 +31,10 @@ public:
 private:
     Window* m_window;
     ImGuiContext* m_gui = nullptr;
+
+    VkFormat m_renderTargetFormat = VK_FORMAT_R8G8B8A8_UNORM;
+    rad::Ref<Image> m_renderTarget;
+    rad::Ref<ImageView> m_renderTargetView;
 
     rad::Ref<DescriptorPool> m_descPool;
 

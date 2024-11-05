@@ -150,26 +150,10 @@ void Window::Resize(int width, int height)
         swapchainImageCount = m_surfaceCaps.maxImageCount;
     }
 
-    if (!m_renderTarget)
-    {
-        // TODO: render scale?
-        m_renderTarget = device->CreateImage2DRenderTarget(
-            m_context->m_colorFormat, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
-    }
-    if (!m_renderTargetView)
-    {
-        m_renderTargetView = m_renderTarget->CreateDefaultView();
-    }
-
-    m_overlay = device->CreateImage2DRenderTarget(
-        VK_FORMAT_R8G8B8A8_UNORM, width, height, VK_IMAGE_USAGE_SAMPLED_BIT);
-    m_overlayView = m_overlay->CreateDefaultView();
-
     CreateSwapchain(width, height);
     CreateSamplers();
 
     CreateBlitPipeline();
-    UpdateBlitBindings();
 
     m_cmdPool = device->CreateCommandPool(queue->GetQueueFamily(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -393,14 +377,27 @@ bool Window::CreateBlitPipeline()
     {
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 },
     };
-    m_blitDescPool = device->CreateDescriptorPool(1, poolSizes);
-    m_blitDescSet = m_blitDescPool->Allocate(m_blitDescSetLayout.get());
+
+    if (!m_blitDescPool)
+    {
+        m_blitDescPool = device->CreateDescriptorPool(1, poolSizes);
+    }
+    if (!m_blitDescSet)
+    {
+        m_blitDescSet = m_blitDescPool->Allocate(m_blitDescSetLayout.get());
+    }
 
     return true;
 }
 
-void Window::UpdateBlitBindings()
+void Window::SetColorBufferAndOverlay(
+    rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView)
 {
+    m_colorBufferView = colorBufferView;
+    m_overlayView = overlayView;
+    Image* renderTarget = colorBufferView->GetImage();
+    Image* overlay = overlayView->GetImage();
+
     if (m_blitDescSet)
     {
         VkWriteDescriptorSet writes[2] = {};
@@ -413,8 +410,8 @@ void Window::UpdateBlitBindings()
         writes[0].descriptorCount = 1;
         writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         VkDescriptorImageInfo renderTargetInfo = {};
-        if (m_renderTarget->GetWidth() <= m_swapchain->GetWidth() &&
-            m_renderTarget->GetHeight() <= m_swapchain->GetHeight())
+        if (renderTarget->GetWidth() <= m_swapchain->GetWidth() &&
+            renderTarget->GetHeight() <= m_swapchain->GetHeight())
         {
             renderTargetInfo.sampler = m_samplerNearest->GetHandle();
         }
@@ -422,7 +419,7 @@ void Window::UpdateBlitBindings()
         {
             renderTargetInfo.sampler = m_samplerLinear->GetHandle();
         }
-        renderTargetInfo.imageView = m_renderTargetView->GetHandle();
+        renderTargetInfo.imageView = m_colorBufferView->GetHandle();
         renderTargetInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         writes[0].pImageInfo = &renderTargetInfo;
 
@@ -434,21 +431,12 @@ void Window::UpdateBlitBindings()
         writes[1].descriptorCount = 1;
         writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         VkDescriptorImageInfo overlayInfo = {};
-        renderTargetInfo.sampler = m_samplerNearest->GetHandle();
-        renderTargetInfo.imageView = m_overlayView->GetHandle();
-        renderTargetInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        writes[1].pImageInfo = &renderTargetInfo;
+        overlayInfo.sampler = m_samplerNearest->GetHandle();
+        overlayInfo.imageView = m_overlayView->GetHandle();
+        overlayInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        writes[1].pImageInfo = &overlayInfo;
 
         m_blitDescSet->Update(writes);
-    }
-}
-
-void Window::SetRenderTarget(rad::Ref<Image> renderTarget, rad::Ref<ImageView> renderTargetView)
-{
-    m_renderTarget = renderTarget;
-    if (!renderTargetView)
-    {
-        m_renderTargetView = renderTarget->CreateDefaultView();
     }
 }
 
@@ -461,32 +449,34 @@ void Window::BlitToSwapchain()
 
     cmdBuffer->Begin();
 
-    if (m_renderTarget->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    Image* colorBuffer = m_colorBufferView->GetImage();
+    Image* overlay = m_overlayView->GetImage();
+    if (colorBuffer->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     {
-        cmdBuffer->TransitLayoutFromCurrent(m_renderTarget.get(),
+        cmdBuffer->TransitLayoutFromCurrent(colorBuffer,
             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             VK_ACCESS_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
-    if (m_overlay->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    if (overlay->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
     {
-        cmdBuffer->TransitLayoutFromCurrent(m_overlay.get(),
+        cmdBuffer->TransitLayoutFromCurrent(overlay,
             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
             VK_ACCESS_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
-    Image* renderTarget = m_swapchain->GetCurrentImage();
-    if (renderTarget->GetCurrentLayout() != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+    Image* swapchainImage = m_swapchain->GetCurrentImage();
+    if (swapchainImage->GetCurrentLayout() != VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
     {
-        cmdBuffer->TransitLayoutFromCurrent(renderTarget,
+        cmdBuffer->TransitLayoutFromCurrent(swapchainImage,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     }
 
-    ImageView* renderTargetView = m_swapchain->GetCurrentImageView();
+    ImageView* swapchainImageView = m_swapchain->GetCurrentImageView();
     VkClearColorValue clearColor = {};
-    cmdBuffer->BeginRendering(renderTargetView, &clearColor);
+    cmdBuffer->BeginRendering(swapchainImageView, &clearColor);
     cmdBuffer->BindPipeline(m_blitPipeline.get());
     cmdBuffer->BindDescriptorSets(
         m_blitPipeline.get(), m_blitPipelineLayout.get(),
@@ -510,9 +500,9 @@ void Window::BlitToSwapchain()
 
     cmdBuffer->EndRendering();
 
-    if (renderTarget->GetCurrentLayout() != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+    if (swapchainImage->GetCurrentLayout() != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
     {
-        cmdBuffer->TransitLayoutFromCurrent(renderTarget,
+        cmdBuffer->TransitLayoutFromCurrent(swapchainImage,
             VK_PIPELINE_STAGE_NONE,
             VK_ACCESS_NONE,
             VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);

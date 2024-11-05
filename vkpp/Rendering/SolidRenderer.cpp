@@ -55,16 +55,21 @@ bool SolidRenderer::LoadScene(Scene* scene)
     const auto& swapchainImageCount = m_context->m_swapchainImageCount;
 
     m_uniformBuffers.resize(swapchainImageCount);
+    m_uniformData.resize(swapchainImageCount);
     VkDeviceSize minOffsetAlign = deviceProps.limits.minUniformBufferOffsetAlignment;
+    VkDeviceSize frameInfoStride = sizeof(FrameInfo);
+    VkDeviceSize meshInfoStride = sizeof(MeshInfo);
     if (minOffsetAlign > 0)
     {
-        m_frameInfoStride = rad::RoundUpToMultiple(m_frameInfoStride, minOffsetAlign);
-        m_meshInfoStride = rad::RoundUpToMultiple(m_meshInfoStride, minOffsetAlign);
+        frameInfoStride = rad::RoundUpToMultiple(frameInfoStride, minOffsetAlign);
+        meshInfoStride = rad::RoundUpToMultiple(meshInfoStride, minOffsetAlign);
     }
     for (uint32_t i = 0; i < m_uniformBuffers.size(); ++i)
     {
+        // created as persistent mapped:
         m_uniformBuffers[i] = device->CreateUniformBuffer(
-            m_frameInfoStride + scene->m_meshes.size() * m_meshInfoStride, true);
+            frameInfoStride + scene->m_meshes.size() * meshInfoStride, true);
+        m_uniformData[i] = (uint8_t*)m_uniformBuffers[i]->GetMappedAddr();
     }
 
     m_frameDescSetLayout = device->CreateDescriptorSetLayout(
@@ -111,7 +116,7 @@ bool SolidRenderer::LoadScene(Scene* scene)
         VertexInputAttrib{.location = 2, .format = VK_FORMAT_R32G32B32A32_SFLOAT }, // Tangent
         VertexInputAttrib{.location = 3, .format = VK_FORMAT_R32G32_SFLOAT },       // UV
         }
-    );
+        );
     pipelineInfo.m_inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipelineInfo.m_depthStencil.depthTestEnable = VK_TRUE;
     pipelineInfo.m_depthStencil.depthWriteEnable = VK_TRUE;
@@ -161,14 +166,26 @@ void SolidRenderer::Render()
     {
         return;
     }
-    m_uniformOffset = static_cast<uint32_t>(m_frameInfoStride);
+
+    m_uniformDataOffset = 0;
+
+    FrameInfo frameInfo = {};
+    frameInfo.viewProj = m_scene->m_camera->GetViewProjectionMatrix();
+    m_frameInfoOffset = WriteUniforms(&frameInfo, sizeof(frameInfo));
 
     CommandBuffer* cmdBuffer = m_cmdBuffers[m_cmdBufferIndex].get();
     cmdBuffer->Begin();
+    if (m_renderTarget->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    {
+        cmdBuffer->TransitLayoutFromCurrent(m_renderTarget.get(),
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    }
     VkClearColorValue colorValue = {};
     VkClearDepthStencilValue depthStencilValue = {};
-    depthStencilValue.depth = 0.0f;
-    depthStencilValue.stencil = 1;
+    depthStencilValue.depth = 1.0f;
+    depthStencilValue.stencil = 0;
     cmdBuffer->BeginRendering(
         m_renderTargetView.get(), &colorValue,
         m_depthStencilView.get(), &depthStencilValue);
@@ -189,12 +206,16 @@ void SolidRenderer::Render(CommandBuffer* cmdBuffer, SceneNode* node)
     for (size_t i = 0; i < node->m_meshes.size(); ++i)
     {
         Mesh* mesh = node->m_meshes[i].get();
+        MeshInfo meshInfo = {};
+        meshInfo.toWorld = node->m_transformToWorld;
+        uint32_t meshInfoOffset = WriteUniforms(&meshInfo, sizeof(meshInfo));
         Pipeline* pipeline = m_pipelines[mesh->m_renderType].get();
         cmdBuffer->BindPipeline(pipeline);
         cmdBuffer->BindDescriptorSets(
             pipeline, m_pipelineLayout.get(),
             0, { m_frameDescSets[m_cmdBufferIndex].get(), m_sceneDescSet.get() },
-            { 0, m_uniformOffset });
+            { m_frameInfoOffset, meshInfoOffset }
+        );
         cmdBuffer->BindVertexBuffers(
             0, mesh->m_vertexBuffer.get(), mesh->m_vertexBufferOffset);
         cmdBuffer->BindIndexBuffer(
@@ -228,11 +249,21 @@ void SolidRenderer::Resize(uint32_t width, uint32_t height)
 {
     Device* device = m_context->GetDevice();
     m_renderTarget = device->CreateImage2DRenderTarget(
-        m_context->m_colorFormat, width, height);
+        m_context->m_colorFormat, width, height, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_renderTargetView = m_renderTarget->CreateDefaultView();
     m_depthStencil = device->CreateImage2DDepthStencil(
         m_context->m_depthStencilFormat, width, height);
     m_depthStencilView = m_depthStencil->CreateDefaultView();
+}
+
+uint32_t SolidRenderer::WriteUniforms(void* data, size_t sizeInBytes)
+{
+    uint32_t offset = static_cast<uint32_t>(m_uniformDataOffset);
+    memcpy(m_uniformData[m_cmdBufferIndex] + m_uniformDataOffset, data, sizeInBytes);
+    const auto& props = m_context->GetDevice()->GetPhysicalDevice()->m_properties;
+    m_uniformDataOffset += rad::RoundUpToMultiple<size_t>(sizeInBytes,
+        static_cast<size_t>(props.limits.minUniformBufferOffsetAlignment));
+    return offset;
 }
 
 } // namespace vkpp
