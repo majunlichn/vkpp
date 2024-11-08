@@ -84,6 +84,11 @@ public:
             (*this)[(index & 4) ? 1 : 0].z);
     }
 
+    glm::vec3 GetCenter() const
+    {
+        return (m_min + m_max) / 2.0f;
+    }
+
     glm::vec3 GetDiagonal() const
     {
         return (m_max - m_min);

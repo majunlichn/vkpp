@@ -657,4 +657,24 @@ void CommandBuffer::TransitLayoutFromCurrent(
         subresourceRange);
 }
 
+void CommandBuffer::BeginDebugUtilsLabel(std::string_view name, glm::vec4 color)
+{
+    if (vkCmdBeginDebugUtilsLabelEXT)
+    {
+        VkDebugUtilsLabelEXT label = {};
+        label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        label.pLabelName = name.data();
+        memcpy(label.color, &color[0], 4 * sizeof(float));
+        vkCmdBeginDebugUtilsLabelEXT(m_handle, &label);
+    }
+}
+
+void CommandBuffer::EndDebugUtilsLabel()
+{
+    if (vkCmdEndDebugUtilsLabelEXT)
+    {
+        vkCmdEndDebugUtilsLabelEXT(m_handle);
+    }
+}
+
 } // namespace vkpp

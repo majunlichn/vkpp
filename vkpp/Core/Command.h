@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vkpp/Core/Common.h>
+#include <glm/vec4.hpp>
 
 namespace vkpp
 {
@@ -206,6 +207,11 @@ public:
         VkAccessFlags           dstAccessMask,
         VkImageLayout           newLayout,
         const VkImageSubresourceRange* subresourceRange = nullptr);
+
+    // Debug
+
+    void BeginDebugUtilsLabel(std::string_view name, glm::vec4 color);
+    void EndDebugUtilsLabel();
 
 private:
     rad::Ref<Device>            m_device;
