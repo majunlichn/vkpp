@@ -390,7 +390,7 @@ bool Window::CreateBlitPipeline()
     return true;
 }
 
-void Window::SetColorBufferAndOverlay(
+void Window::SetPresentViews(
     rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView)
 {
     m_colorBufferView = colorBufferView;

@@ -20,7 +20,10 @@ public:
     struct MeshInfo
     {
         glm::mat4 toWorld;
-        glm::uvec4 baseColorTextureIndex;
+        uint32_t baseColorTextureIndex;
+        uint32_t baseColorSamplerIndex;
+        uint32_t baseColorUVIndex;
+        float baseColorLodBias;
     };
 
     bool Init();

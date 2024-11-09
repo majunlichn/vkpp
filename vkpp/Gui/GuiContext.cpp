@@ -33,7 +33,7 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
 
     // Setup Dear ImGui context:
     IMGUI_CHECKVERSION();
-    m_gui = ImGui::CreateContext();
+    m_imgui = ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
@@ -132,7 +132,7 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
 
 void GuiContext::Destroy()
 {
-    if (m_gui)
+    if (m_imgui)
     {
         Context* context = m_window->GetContext();
         Device* device = context->GetDevice();
@@ -140,7 +140,7 @@ void GuiContext::Destroy()
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
-        m_gui = nullptr;
+        m_imgui = nullptr;
     }
 }
 

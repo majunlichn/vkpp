@@ -18,6 +18,8 @@
 #include <vkpp/Core/Surface.h>
 #include <vkpp/Core/Swapchain.h>
 
+#include <mutex>
+
 namespace vkpp
 {
 
@@ -35,6 +37,9 @@ public:
     {
         return m_queues[family].get();
     }
+    rad::Ref<CommandBuffer> AllocateTransientCommandBuffer(
+        QueueFamily queueFamily = QueueFamilyUniversal,
+        VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     void WaitIdle();
 
@@ -43,9 +48,17 @@ public:
     void WriteBuffer(Buffer* buffer, const void* data, VkDeviceSize offset, VkDeviceSize size);
     void WriteBuffer(Buffer* buffer, const void* data);
 
+    void CopyBufferToImage(Buffer* buffer, Image* image, rad::Span<VkBufferImageCopy> copyInfos);
+    void CopyBufferToImage2D(Buffer* buffer, VkDeviceSize bufferOffset,
+        Image* image, uint32_t baseMipLevel = 0, uint32_t levelCount = 1,
+        uint32_t baseArrayLayer = 0, uint32_t layerCount = 1);
+
     rad::Ref<Instance> m_instance;
     rad::Ref<Device> m_device;
     rad::Ref<Queue> m_queues[QueueFamilyCount];
+    // Host access to command pools must be externally synchronized.
+    std::mutex m_cmdPoolMutex;
+    rad::Ref<CommandPool> m_cmdPools[QueueFamilyCount];
 
     VkExtent2D m_resolution = {};
     uint32_t m_swapchainImageCount = 3;

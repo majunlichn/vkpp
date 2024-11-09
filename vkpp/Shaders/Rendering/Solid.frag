@@ -13,6 +13,11 @@ layout (location = 0) out vec4 out_FragColor;
 void main()
 {
     vec4 color = texture(
-        sampler2D(g_textures[g_meshInfo.baseColorTextureIndex.x], g_samplers[0]), in_TexCoord);
+        sampler2D(
+            g_textures[g_meshInfo.baseColorTextureIndex],
+            g_samplers[g_meshInfo.baseColorSamplerIndex]
+        ),
+        in_TexCoord,
+        g_meshInfo.baseColorLodBias);
     out_FragColor = vec4(color);
 }

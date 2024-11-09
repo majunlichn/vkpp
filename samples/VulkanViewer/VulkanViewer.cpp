@@ -33,7 +33,7 @@ bool VulkanViewer::Init()
         return false;
     }
 
-    SetColorBufferAndOverlay(
+    SetPresentViews(
         m_solidRenderer->m_renderTargetView,
         m_gui->GetRenderTargetView());
 
@@ -119,7 +119,7 @@ void VulkanViewer::Resize(int width, int height)
         RAD_LOG(m_logger, err, "m_gui->Init() failed!");
     }
 
-    SetColorBufferAndOverlay(
+    SetPresentViews(
         m_solidRenderer->m_renderTargetView, m_gui->GetRenderTargetView());
 }
 

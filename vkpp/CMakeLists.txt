@@ -29,6 +29,8 @@ set(VKPP_SOURCE_FILES
     Core/Buffer.cpp
     Core/Image.h
     Core/Image.cpp
+    Core/Texture.h
+    Core/Texture.cpp
     Core/Sampler.h
     Core/Sampler.cpp
     Core/Descriptor.h

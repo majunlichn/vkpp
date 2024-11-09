@@ -88,10 +88,19 @@ bool Context::Init(rad::Ref<Instance> instance, rad::Ref<PhysicalDevice> gpuSele
         if (m_device->IsQueueFamilySupported(queueFamily))
         {
             m_queues[i] = m_device->CreateQueue(QueueFamily(queueFamily));
+            m_cmdPools[i] = m_device->CreateCommandPool(
+                queueFamily, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         }
     }
 
     return true;
+}
+
+rad::Ref<CommandBuffer> Context::AllocateTransientCommandBuffer(
+    QueueFamily queueFamily, VkCommandBufferLevel level)
+{
+    std::lock_guard<std::mutex> lock(m_cmdPoolMutex);
+    return m_cmdPools[queueFamily]->Allocate(level);
 }
 
 void Context::WaitIdle()
@@ -110,9 +119,7 @@ void Context::ReadBuffer(Buffer* buffer, void* dest, VkDeviceSize offset, VkDevi
         rad::Ref<Buffer> stagingBuffer = m_device->CreateStagingBuffer(size);
 
         QueueFamily queueFamily = QueueFamilyUniversal;
-        rad::Ref<CommandPool> cmdPool =
-            m_device->CreateCommandPool(queueFamily, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-        rad::Ref<CommandBuffer> cmdBuffer = cmdPool->Allocate();
+        rad::Ref<CommandBuffer> cmdBuffer = AllocateTransientCommandBuffer(queueFamily);
 
         cmdBuffer->Begin();
 
@@ -176,12 +183,10 @@ void Context::WriteBuffer(
     else
     {
         QueueFamily queueFamily = QueueFamilyUniversal;
-        rad::Ref<CommandPool> cmdPool =
-            m_device->CreateCommandPool(queueFamily, VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
         rad::Ref<Buffer> stagingBuffer = m_device->CreateStagingBuffer(size);
         stagingBuffer->Write(data);
 
-        rad::Ref<CommandBuffer> cmdBuffer = cmdPool->Allocate();
+        rad::Ref<CommandBuffer> cmdBuffer = AllocateTransientCommandBuffer(queueFamily);
         cmdBuffer->Begin();
         VkBufferCopy copyRegion = {};
         copyRegion.srcOffset = 0;
@@ -196,6 +201,61 @@ void Context::WriteBuffer(
 void Context::WriteBuffer(Buffer* buffer, const void* data)
 {
     WriteBuffer(buffer, data, 0, buffer->GetSize());
+}
+
+void Context::CopyBufferToImage(Buffer* buffer, Image* image, rad::Span<VkBufferImageCopy> copyInfos)
+{
+    rad::Ref<CommandBuffer> commandBuffer = AllocateTransientCommandBuffer();
+    commandBuffer->Begin();
+    // VUID-vkCmdCopyBufferToImage-dstImageLayout-01396
+    if (image->GetCurrentLayout() != VK_IMAGE_LAYOUT_GENERAL &&
+        image->GetCurrentLayout() != VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+        image->GetCurrentLayout() != VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR)
+    {
+        commandBuffer->TransitLayoutFromCurrent(image,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_ACCESS_TRANSFER_WRITE_BIT,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    }
+    commandBuffer->CopyBufferToImage(buffer, image, image->GetCurrentLayout(), copyInfos);
+    commandBuffer->TransitLayoutFromCurrent(image,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_READ_BIT,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    commandBuffer->End();
+    GetQueue()->SubmitAndWait(commandBuffer.get());
+}
+
+void Context::CopyBufferToImage2D(
+    Buffer* buffer, VkDeviceSize bufferOffset,
+    Image* image, uint32_t baseMipLevel, uint32_t levelCount,
+    uint32_t baseArrayLayer, uint32_t layerCount)
+{
+    std::vector<VkBufferImageCopy> copyInfos(levelCount);
+    VkExtent3D blockExtent = vkuFormatTexelBlockExtent(image->GetFormat());
+    uint32_t blockSize = vkuFormatElementSize(image->GetFormat());
+    for (uint32_t i = 0; i < levelCount; i++)
+    {
+        uint32_t mipLevel = baseMipLevel + i;
+        uint32_t mipWidth = std::max<uint32_t>(image->GetWidth() >> mipLevel, 1);
+        uint32_t mipHeight = std::max<uint32_t>(image->GetHeight() >> mipLevel, 1);
+
+        copyInfos[i].bufferOffset = bufferOffset;
+        copyInfos[i].bufferRowLength = rad::RoundUpToMultiple(mipWidth, blockExtent.width);
+        copyInfos[i].bufferImageHeight = rad::RoundUpToMultiple(mipHeight, blockExtent.height);
+        copyInfos[i].imageSubresource.aspectMask = GetImageAspectFromFormat(image->GetFormat());
+        copyInfos[i].imageSubresource.mipLevel = mipLevel;
+        copyInfos[i].imageSubresource.baseArrayLayer = baseArrayLayer;
+        copyInfos[i].imageSubresource.layerCount = layerCount;
+        copyInfos[i].imageOffset = {};
+        copyInfos[i].imageExtent.width = mipWidth;
+        copyInfos[i].imageExtent.height = mipHeight;
+        copyInfos[i].imageExtent.depth = 1;
+
+        bufferOffset += (copyInfos[i].bufferRowLength / blockExtent.width) *
+            (copyInfos[i].bufferImageHeight / blockExtent.height) * blockSize * layerCount;
+    }
+    CopyBufferToImage(buffer, image, copyInfos);
 }
 
 } // namespace vkpp

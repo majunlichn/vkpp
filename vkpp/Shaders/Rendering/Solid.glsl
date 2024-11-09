@@ -8,5 +8,8 @@ layout(set = 0, binding = 0) uniform FrameInfo
 layout(set = 0, binding = 1) uniform MeshInfo
 {
     mat4 toWorld;
-    uvec4 baseColorTextureIndex;
+    uint baseColorTextureIndex;
+    uint baseColorSamplerIndex;
+    uint baseColorUVIndex;
+    float baseColorLodBias;
 } g_meshInfo;

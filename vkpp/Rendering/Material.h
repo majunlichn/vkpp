@@ -11,6 +11,8 @@ class Scene;
 struct TextureInfo : public rad::RefCounted<TextureInfo>
 {
     std::string fileName;
+    // All images are managed in scene->m_image2Ds (same fileNames refers to one image, with same index).
+    uint32_t imageIndex;
     uint32_t uvIndex;
     VkSamplerAddressMode addressModeU;
     VkSamplerAddressMode addressModeV;
@@ -28,6 +30,8 @@ class Material : public rad::RefCounted<Material>
 public:
     Material(Scene* scene);
     ~Material();
+
+    bool Upload();
 
     Scene* m_scene;
     std::string m_name;

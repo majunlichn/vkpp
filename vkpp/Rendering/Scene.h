@@ -32,19 +32,16 @@ public:
     rad::Ref<Camera> m_camera;
 
     // AbsolutePath=>Index
-    std::map<std::string, size_t, rad::StringLess> m_imagePathIndexMap;
-    std::vector<rad::Ref<Image>> m_images;
-    std::vector<rad::Ref<ImageView>> m_imageViews;
+    std::map<std::string, size_t, rad::StringLess> m_imageNameIndexMap;
+    // Image at index 0 is a fallback image (black).
+    std::vector<rad::Ref<Image>> m_image2Ds;
+    std::vector<rad::Ref<ImageView>> m_image2DViews;
 
-    Image* GetImage(std::string_view path)
-    {
-        auto iter = m_imagePathIndexMap.find(path);
-        if (iter != m_imagePathIndexMap.end())
-        {
-            return m_images[iter->second].get();
-        }
-        return nullptr;
-    }
+    // Only create new image if the fileName is not found, return the index in m_image2Ds.
+    uint32_t UploadImage2DFromFile(std::string_view fileName, bool genMipmaps);
+    uint32_t GetImage2DIndex(std::string_view path);
+    Image* GetImage2D(size_t index) { return m_image2Ds[index].get(); }
+    Image* GetImage2D(std::string_view path);
 
     AABB GetBoundingBox() const;
 

@@ -30,7 +30,7 @@ public:
 
 private:
     Window* m_window;
-    ImGuiContext* m_gui = nullptr;
+    ImGuiContext* m_imgui = nullptr;
 
     VkFormat m_renderTargetFormat = VK_FORMAT_R8G8B8A8_UNORM;
     rad::Ref<Image> m_renderTarget;

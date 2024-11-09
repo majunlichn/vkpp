@@ -88,7 +88,7 @@ bool SolidRenderer::LoadScene(Scene* scene)
     m_sceneDescSetLayout = device->CreateDescriptorSetLayout(
         { // binding, type, count, stageFlags, samplers
             { 0, VK_DESCRIPTOR_TYPE_SAMPLER, 4, VK_SHADER_STAGE_ALL_GRAPHICS, samplerHandles.data() },
-            { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, static_cast<uint32_t>(scene->m_images.size()), VK_SHADER_STAGE_ALL_GRAPHICS, nullptr},
+            { 1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, static_cast<uint32_t>(scene->m_image2Ds.size()), VK_SHADER_STAGE_ALL_GRAPHICS, nullptr},
         }
         );
     m_pipelineLayout = device->CreatePipelineLayout(
@@ -131,7 +131,7 @@ bool SolidRenderer::LoadScene(Scene* scene)
         {
             VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, swapchainImageCount },
             VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_SAMPLER, 4 },
-            VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, static_cast<uint32_t>(scene->m_images.size()) },
+            VkDescriptorPoolSize { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, static_cast<uint32_t>(scene->m_image2Ds.size()) },
         });
     m_frameDescSets.resize(swapchainImageCount);
     for (size_t i = 0; i < m_frameDescSets.size(); ++i)
@@ -154,9 +154,9 @@ bool SolidRenderer::SetupResourceBindings()
         m_frameDescSets[i]->UpdateBuffers(1, 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
             VkDescriptorBufferInfo{ m_uniformBuffers[i]->GetHandle(), 0, sizeof(MeshInfo) });
     }
-    std::vector<VkImageLayout> imageLayouts(m_scene->m_images.size(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    std::vector<VkImageLayout> imageLayouts(m_scene->m_image2Ds.size(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     m_sceneDescSet->UpdateImages(1, 0, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-        m_scene->m_imageViews, imageLayouts);
+        m_scene->m_image2DViews, imageLayouts);
     return true;
 }
 
@@ -208,6 +208,15 @@ void SolidRenderer::Render(CommandBuffer* cmdBuffer, SceneNode* node)
         Mesh* mesh = node->m_meshes[i].get();
         MeshInfo meshInfo = {};
         meshInfo.toWorld = node->m_transformToWorld;
+        Material* material = mesh->m_material.get();
+        if (TextureInfo* textureInfo = material->m_baseColorTexture.get())
+        {
+            meshInfo.baseColorTextureIndex = textureInfo->imageIndex;
+            meshInfo.baseColorSamplerIndex = 3; // sampler index
+            meshInfo.baseColorUVIndex = textureInfo->uvIndex;
+            meshInfo.baseColorLodBias = 0.0f;
+        }
+
         uint32_t meshInfoOffset = WriteUniforms(&meshInfo, sizeof(meshInfo));
         Pipeline* pipeline = m_pipelines[mesh->m_renderType].get();
         cmdBuffer->BindPipeline(pipeline);

@@ -24,6 +24,8 @@ Image::Image(
     VK_CHECK(vmaCreateImage(m_device->GetAllocator(), &createInfo, &allocInfo,
         &m_handle, &m_allocation, &m_allocationInfo));
 
+    m_currentLayout = createInfo.initialLayout;
+
     if (m_handle != VK_NULL_HANDLE)
     {
         vmaGetMemoryTypeProperties(

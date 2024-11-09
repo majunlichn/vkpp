@@ -16,7 +16,7 @@ public:
 
     Context* GetContext() { return m_context.get(); }
     Surface* GetSurface() { return m_surface.get(); }
-    void SetColorBufferAndOverlay(
+    void SetPresentViews(
         rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView);
     Swapchain* GetSwapchain() { return m_swapchain.get(); }
     size_t GetFrameIndex() const { return m_frameIndex; }
@@ -57,7 +57,7 @@ private:
     // https://en.wikipedia.org/wiki/Multiple_buffering
     rad::Ref<Swapchain> m_swapchain;
 
-    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout; 
+    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout;
     rad::Ref<PipelineLayout> m_blitPipelineLayout;
     rad::Ref<Pipeline> m_blitPipeline;
 

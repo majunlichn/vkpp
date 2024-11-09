@@ -74,7 +74,7 @@ private:
 
     // Track image layout
     VkPipelineStageFlags    m_currentStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-    VkAccessFlags           m_currentAccessFlags = 0;
+    VkAccessFlags           m_currentAccessFlags = VK_ACCESS_NONE;
     VkImageLayout           m_currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 }; // class Image
