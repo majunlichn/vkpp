@@ -170,6 +170,9 @@ void Window::Resize(int width, int height)
         m_drawComplete[i] = device->CreateSemaphore();
         m_fences[i] = device->CreateFence(VK_FENCE_CREATE_SIGNALED_BIT);
     }
+
+    m_context->m_resolution.width = width;
+    m_context->m_resolution.height = height;
 }
 
 void Window::Resize()
@@ -178,8 +181,6 @@ void Window::Resize()
     int height = 0;
     GetSizeInPixels(&width, &height);
     Resize(width, height);
-    m_context->m_resolution.width = width;
-    m_context->m_resolution.height = height;
 }
 
 bool Window::CreateSamplers()

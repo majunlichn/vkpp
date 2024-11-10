@@ -54,6 +54,8 @@ set(VKPP_SOURCE_FILES
     Rendering/Material.cpp
     Rendering/Camera.h
     Rendering/Camera.cpp
+    Rendering/CameraController.h
+    Rendering/CameraController.cpp
     Rendering/Light.h
     Rendering/Light.cpp
     Rendering/Scene.h

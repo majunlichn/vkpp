@@ -4,6 +4,7 @@
 #include <vkpp/Gui/GuiContext.h>
 #include <vkpp/Rendering/Scene.h>
 #include <vkpp/Rendering/SolidRenderer.h>
+#include <vkpp/Rendering/CameraController.h>
 
 class VulkanViewer : public vkpp::Window
 {
@@ -24,12 +25,15 @@ protected:
     virtual void OnKeyDown(const SDL_KeyboardEvent& keyDown) override;
     virtual void OnKeyUp(const SDL_KeyboardEvent& keyUp) override;
 
+    virtual void OnMouseMove(const SDL_MouseMotionEvent& mouseMotion) override;
+
 private:
     std::shared_ptr<spdlog::logger> m_logger;
     rad::Ref<vkpp::GuiContext> m_gui;
     bool m_showDemoWindow = true;
 
     rad::Ref<vkpp::Scene> m_scene;
+    rad::Ref<vkpp::CameraController> m_cameraController;
     rad::Ref<vkpp::SolidRenderer> m_solidRenderer;
 
 }; // class VulkanViewer

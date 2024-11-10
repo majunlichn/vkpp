@@ -6,6 +6,16 @@
 namespace vkpp
 {
 
+struct SphericalCoord
+{
+    float r;        // distance to the origin
+    float theta;    // angle to +z
+    float phi;      // angle to +x
+};
+
+glm::vec3 SphericalToCartesian(SphericalCoord sph);
+SphericalCoord CartesianToSpherical(glm::vec3 cart);
+
 // Aixs-Aligned Bounding Box (AABB)
 // https://github.com/mmp/pbrt-v4/blob/master/src/pbrt/util/vecmath.h
 class AABB
