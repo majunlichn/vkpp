@@ -24,6 +24,8 @@ public:
         uint32_t baseColorSamplerIndex;
         uint32_t baseColorUVIndex;
         float baseColorLodBias;
+        glm::vec3 wireframeColor;
+        int shadeWireframe;
     };
 
     bool Init();

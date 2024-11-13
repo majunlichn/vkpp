@@ -82,6 +82,12 @@ PhysicalDevice::PhysicalDevice(rad::Ref<Instance> instance, VkPhysicalDevice han
             m_vk13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
             VK_STRUCTURE_CHAIN_ADD(m_features2, m_vk13Features);
         }
+        if (IsExtensionSupported(VK_KHR_FRAGMENT_SHADER_BARYCENTRIC_EXTENSION_NAME))
+        {
+            m_barycentricFeatures = {};
+            m_barycentricFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADER_BARYCENTRIC_FEATURES_KHR;
+            VK_STRUCTURE_CHAIN_ADD(m_features2, m_barycentricFeatures);
+        }
         VK_STRUCTURE_CHAIN_END(m_features2);
         vkGetPhysicalDeviceFeatures2(m_handle, &m_features2);
     }

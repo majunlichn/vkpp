@@ -208,6 +208,8 @@ void SolidRenderer::Render(CommandBuffer* cmdBuffer, SceneNode* node)
         Mesh* mesh = node->m_meshes[i].get();
         MeshInfo meshInfo = {};
         meshInfo.toWorld = node->m_transformToWorld;
+        meshInfo.wireframeColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        meshInfo.shadeWireframe = true;
         Material* material = mesh->m_material.get();
         if (TextureInfo* textureInfo = material->m_baseColorTexture.get())
         {

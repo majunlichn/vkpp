@@ -12,4 +12,6 @@ layout(set = 0, binding = 1) uniform MeshInfo
     uint baseColorSamplerIndex;
     uint baseColorUVIndex;
     float baseColorLodBias;
+    vec3 wireframeColor;
+    int shadeWireframe;
 } g_meshInfo;

@@ -54,6 +54,7 @@ public:
     VkPhysicalDeviceVulkan11Features m_vk11Features;
     VkPhysicalDeviceVulkan12Features m_vk12Features;
     VkPhysicalDeviceVulkan13Features m_vk13Features;
+    VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR m_barycentricFeatures = {};
 
 }; // class PhysicalDevice
 
