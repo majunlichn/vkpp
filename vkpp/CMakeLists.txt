@@ -62,6 +62,8 @@ set(VKPP_SOURCE_FILES
     Rendering/Scene.cpp
     Rendering/SceneNode.h
     Rendering/SceneNode.cpp
+    Rendering/Animation.h
+    Rendering/Animation.cpp
     Rendering/SceneImporter.h
     Rendering/SceneImporter.cpp
     Rendering/SolidRenderer.h

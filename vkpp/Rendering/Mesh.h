@@ -25,6 +25,7 @@ enum class RenderType : uint32_t
     TriangleList,           // position + normal
     TriangleListColored,    // position + normal + color
     TriangleListTextured,   // position + normal + tangent + uv
+    TriangleListTexturedSkinning,   // position + normal + tangent + uv + jointIndices + jointWeights
 };
 
 struct VertexWeight
@@ -60,6 +61,8 @@ public:
     std::vector<glm::vec3> m_bitangents;
     std::vector<glm::vec4> m_colors;
     std::vector<std::vector<glm::vec2>> m_uvChannels;
+    std::vector<glm::uvec4> m_jointIndices;
+    std::vector<glm::vec4> m_jointWeights;
     std::vector<uint32_t> m_indices;
 
     std::vector<Bone> m_bones;

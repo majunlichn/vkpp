@@ -1,4 +1,5 @@
 #include <vkpp/Rendering/SceneImporter.h>
+#include <rad/Core/TypeTraits.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 
@@ -133,17 +134,17 @@ rad::Ref<Mesh> SceneImporter::ImportMesh(const aiMesh* meshData)
     rad::Ref<Mesh> mesh = RAD_NEW Mesh(m_scene.get());
     mesh->m_name = meshData->mName.C_Str();
     uint32_t numVertPerPrim = 0;
-    if (meshData->mPrimitiveTypes == aiPrimitiveType_POINT)
+    if (meshData->mPrimitiveTypes == rad::ToUnderlying(aiPrimitiveType_POINT))
     {
         mesh->m_primitiveType = PrimitiveType::Point;
         numVertPerPrim = 1;
     }
-    else if (meshData->mPrimitiveTypes == aiPrimitiveType_LINE)
+    else if (meshData->mPrimitiveTypes == rad::ToUnderlying(aiPrimitiveType_LINE))
     {
         mesh->m_primitiveType = PrimitiveType::Line;
         numVertPerPrim = 2;
     }
-    else if (meshData->mPrimitiveTypes == aiPrimitiveType_TRIANGLE)
+    else if (meshData->mPrimitiveTypes == rad::ToUnderlying(aiPrimitiveType_TRIANGLE))
     {
         mesh->m_primitiveType = PrimitiveType::Triangle;
         numVertPerPrim = 3;

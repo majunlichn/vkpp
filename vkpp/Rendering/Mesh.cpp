@@ -32,6 +32,10 @@ uint32_t Mesh::GetVertexStride(RenderType renderType)
         return static_cast<uint32_t>(sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec4));
     case RenderType::TriangleListTextured:
         return static_cast<uint32_t>(sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec4) + sizeof(glm::vec2));
+    case RenderType::TriangleListTexturedSkinning:
+        return static_cast<uint32_t>(
+            sizeof(glm::vec3) + sizeof(glm::vec3) + sizeof(glm::vec4) + sizeof(glm::vec2)
+            + sizeof(glm::uvec4) + sizeof(glm::vec4));
     }
     return 0;
 }
