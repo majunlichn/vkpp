@@ -1,4 +1,4 @@
-#include <vkpp/Rendering/Light.h>
+#include <vkpp/Scene/Light.h>
 
 namespace vkpp
 {

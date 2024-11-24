@@ -16,6 +16,10 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(USE_STATIC_CRT OFF CACHE BOOL "Link against the static runtime libraries." FORCE)
+include(imported/radcpp/cmake/CompilerOptions.cmake)
+include(imported/radcpp/cmake/Sanitizers.cmake)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(VKPP_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

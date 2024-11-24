@@ -9,11 +9,11 @@
 namespace vkpp
 {
 
-class GuiContext : public rad::RefCounted<GuiContext>
+class GuiRenderer : public rad::RefCounted<GuiRenderer>
 {
 public:
-    GuiContext(Window* window);
-    ~GuiContext();
+    GuiRenderer(Window* window);
+    ~GuiRenderer();
 
     ImGuiIO& GetIO() { return ImGui::GetIO(); }
     ImFontAtlas* GetFonts() { return ImGui::GetIO().Fonts; }
@@ -21,7 +21,7 @@ public:
     bool Init(rad::Span<VkDescriptorPoolSize> descPoolSizes = {});
     void Destroy();
 
-    VkFormat GetRenderTargetFormat() const { return m_renderTargetFormat; }
+    Image* GetRenderTarget() { return m_renderTarget.get(); }
     ImageView* GetRenderTargetView() { return m_renderTargetView.get(); }
 
     bool ProcessEvent(const SDL_Event& event);
@@ -30,7 +30,7 @@ public:
 
 private:
     Window* m_window;
-    ImGuiContext* m_imgui = nullptr;
+    ImGuiContext* m_gui = nullptr;
 
     VkFormat m_renderTargetFormat = VK_FORMAT_R8G8B8A8_UNORM;
     rad::Ref<Image> m_renderTarget;
@@ -43,6 +43,6 @@ private:
     uint32_t m_cmdBufferIndex = 0;
     VkClearColorValue m_clearValue = {};
 
-}; // class GuiContext
+}; // class GuiRenderer
 
 } // namespace vkpp

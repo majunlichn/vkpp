@@ -1,4 +1,4 @@
-#include <vkpp/Rendering/CameraController.h>
+#include <vkpp/Scene/CameraController.h>
 
 namespace vkpp
 {
@@ -32,12 +32,12 @@ void CameraController::SetMoveVerticalSpeed(float moveSpeed)
     m_moveDownSpeed = moveSpeed;
 }
 
-void CameraController::Update(float deltaTime)
+void CameraController::Update(const Input& input, float deltaTime)
 {
     constexpr float pi = glm::pi<float>();
-    if (m_input.yawRel != 0.0f)
+    if (input.yawRel != 0.0f)
     {
-        m_yaw += m_input.yawRel * m_input.yawRelToRadians * m_yawSpeed * deltaTime;
+        m_yaw += input.yawRel * m_yawSpeed * deltaTime;
         if (m_yaw > 2 * pi)
         {
             m_yaw -= 2.0f * pi;
@@ -47,9 +47,9 @@ void CameraController::Update(float deltaTime)
             m_yaw += 2.0f * pi;
         }
     }
-    if (m_input.pitchRel != 0.0f)
+    if (input.pitchRel != 0.0f)
     {
-        m_pitch += m_input.pitchRel * m_input.pitchRelToRadians * m_pitchSpeed * deltaTime;
+        m_pitch += input.pitchRel * m_pitchSpeed * deltaTime;
         if (m_pitch > glm::radians(89.0f))
         {
             m_pitch = glm::radians(89.0f);
@@ -70,35 +70,31 @@ void CameraController::Update(float deltaTime)
     glm::vec3 right = glm::cross(direction, up);
     right = glm::normalize(right);
 
-    if (m_input.moveForward)
+    if (input.moveForward)
     {
         m_camera->m_position += direction * m_moveForwardSpeed * deltaTime;
     }
-    if (m_input.moveBack)
+    if (input.moveBack)
     {
         m_camera->m_position -= direction * m_moveBackSpeed * deltaTime;
     }
-    if (m_input.moveLeft)
+    if (input.moveLeft)
     {
         m_camera->m_position -= right * m_moveSideSpeed * deltaTime;
     }
-    if (m_input.moveRight)
+    if (input.moveRight)
     {
         m_camera->m_position += right * m_moveSideSpeed * deltaTime;
     }
-    if (m_input.moveUp)
+    if (input.moveUp)
     {
         m_camera->m_position += up * m_moveUpSpeed * deltaTime;
     }
-    if (m_input.moveDown)
+    if (input.moveDown)
     {
         m_camera->m_position -= up * m_moveDownSpeed * deltaTime;
     }
     m_camera->m_lookAt = m_camera->m_position + direction;
-
-    m_input.yawRel = 0;
-    m_input.pitchRel = 0;
-    m_input.rollRel = 0;
 }
 
 } // namespace vkpp

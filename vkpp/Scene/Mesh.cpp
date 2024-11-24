@@ -1,6 +1,6 @@
-#include <vkpp/Rendering/Mesh.h>
-#include <vkpp/Rendering/Scene.h>
-#include <vkpp/Rendering/Material.h>
+#include <vkpp/Scene/Mesh.h>
+#include <vkpp/Scene/Scene.h>
+#include <vkpp/Scene/Material.h>
 
 namespace vkpp
 {

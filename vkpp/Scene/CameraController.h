@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vkpp/Rendering/Camera.h>
+#include <vkpp/Scene/Camera.h>
 
 namespace vkpp
 {
@@ -11,9 +11,22 @@ public:
     CameraController(Camera* camera);
     ~CameraController();
 
+    struct Input
+    {
+        float yawRel;
+        float pitchRel;
+        float rollRel;
+        bool moveForward;
+        bool moveBack;
+        bool moveLeft;
+        bool moveRight;
+        bool moveUp;
+        bool moveDown;
+    };
+
     void SetMoveAroundSpeed(float moveSpeed);
     void SetMoveVerticalSpeed(float moveSpeed);
-    void Update(float deltaTime);
+    void Update(const Input& input, float deltaTime);
 
     Camera* m_camera;
 
@@ -32,30 +45,14 @@ public:
     float m_moveUpSpeed = 1.0f;
     float m_moveDownSpeed = 1.0f;
 
-    struct Input
+    bool IsMoving(const Input& input) const
     {
-        float yawRel;
-        float yawRelToRadians;
-        float pitchRel;
-        float pitchRelToRadians;
-        float rollRel;
-        float rollRelToRadians;
-        bool moveForward;
-        bool moveBack;
-        bool moveLeft;
-        bool moveRight;
-        bool moveUp;
-        bool moveDown;
-    } m_input = {};
-
-    bool IsMoving() const
-    {
-        return m_input.moveForward ||
-            m_input.moveBack ||
-            m_input.moveLeft ||
-            m_input.moveRight ||
-            m_input.moveUp ||
-            m_input.moveDown;
+        return input.moveForward ||
+            input.moveBack ||
+            input.moveLeft ||
+            input.moveRight ||
+            input.moveUp ||
+            input.moveDown;
     }
 
 }; // class CameraController

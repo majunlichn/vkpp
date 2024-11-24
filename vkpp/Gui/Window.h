@@ -16,8 +16,8 @@ public:
 
     Context* GetContext() { return m_context.get(); }
     Surface* GetSurface() { return m_surface.get(); }
-    void SetPresentViews(
-        rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView);
+    void SetColorBufferAndOverlay(
+        rad::Ref<ImageView> colorView, rad::Ref<ImageView> overlayView);
     Swapchain* GetSwapchain() { return m_swapchain.get(); }
     size_t GetFrameIndex() const { return m_frameIndex; }
 
@@ -38,8 +38,8 @@ private:
     rad::Ref<Surface> CreateSurface();
     bool CreateSamplers();
     bool CreateSwapchain(uint32_t width, uint32_t height);
-    bool CreateBlitPipeline();
-    void BlitToSwapchain();
+    bool CreatePresentPipeline();
+    void RenderToSwapchain();
     void Present();
 
     VkSurfaceCapabilitiesKHR m_surfaceCaps = {};
@@ -57,12 +57,12 @@ private:
     // https://en.wikipedia.org/wiki/Multiple_buffering
     rad::Ref<Swapchain> m_swapchain;
 
-    rad::Ref<DescriptorSetLayout> m_blitDescSetLayout;
-    rad::Ref<PipelineLayout> m_blitPipelineLayout;
-    rad::Ref<Pipeline> m_blitPipeline;
+    rad::Ref<DescriptorSetLayout> m_presentDescSetLayout;
+    rad::Ref<PipelineLayout> m_presentPipelineLayout;
+    rad::Ref<Pipeline> m_presentPipeline;
 
-    rad::Ref<DescriptorPool> m_blitDescPool;
-    rad::Ref<DescriptorSet> m_blitDescSet;
+    rad::Ref<DescriptorPool> m_presentDescPool;
+    rad::Ref<DescriptorSet> m_presentDescSet;
 
     size_t m_frameIndex = 0;
     size_t m_backBufferIndex = 0;

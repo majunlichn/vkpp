@@ -1,10 +1,10 @@
 #pragma once
 
 #include <vkpp/Gui/Window.h>
-#include <vkpp/Gui/GuiContext.h>
-#include <vkpp/Rendering/Scene.h>
+#include <vkpp/Gui/GuiRenderer.h>
+#include <vkpp/Scene/Scene.h>
 #include <vkpp/Rendering/SolidRenderer.h>
-#include <vkpp/Rendering/CameraController.h>
+#include <vkpp/Scene/CameraController.h>
 
 class VulkanViewer : public vkpp::Window
 {
@@ -29,11 +29,14 @@ protected:
 
 private:
     std::shared_ptr<spdlog::logger> m_logger;
-    rad::Ref<vkpp::GuiContext> m_gui;
+    rad::Ref<vkpp::GuiRenderer> m_guiRenderer;
     bool m_showDemoWindow = true;
 
     rad::Ref<vkpp::Scene> m_scene;
     rad::Ref<vkpp::CameraController> m_cameraController;
+    vkpp::CameraController::Input m_cameraInput = {};
+    float m_yawRelToRadians = 1.0f;
+    float m_pitchRelToRadians = 1.0f;
     rad::Ref<vkpp::SolidRenderer> m_solidRenderer;
 
 }; // class VulkanViewer

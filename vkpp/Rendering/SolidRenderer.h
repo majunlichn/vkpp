@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vkpp/Rendering/Scene.h>
-#include <vkpp/Rendering/Mesh.h>
+#include <vkpp/Scene/Scene.h>
+#include <vkpp/Scene/Mesh.h>
 
 namespace vkpp
 {

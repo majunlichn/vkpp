@@ -1,5 +1,5 @@
-#include <vkpp/Rendering/Material.h>
-#include <vkpp/Rendering/Scene.h>
+#include <vkpp/Scene/Material.h>
+#include <vkpp/Scene/Scene.h>
 
 namespace vkpp
 {

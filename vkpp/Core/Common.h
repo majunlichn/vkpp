@@ -4,6 +4,7 @@
 #include <rad/Core/Memory.h>
 #include <rad/Core/RefCounted.h>
 #include <rad/Core/String.h>
+#include <rad/Core/TypeTraits.h>
 #include <rad/Container/Span.h>
 #include <rad/IO/Logging.h>
 #include <exception>

@@ -1,10 +1,10 @@
 #include <vkpp/Rendering/SolidRenderer.h>
 #include <vkpp/Core/ShaderCompiler.h>
-#include <vkpp/Rendering/SceneNode.h>
-#include <vkpp/Rendering/Mesh.h>
-#include <vkpp/Rendering/Material.h>
-#include <vkpp/Rendering/Light.h>
-#include <vkpp/Rendering/Camera.h>
+#include <vkpp/Scene/SceneNode.h>
+#include <vkpp/Scene/Mesh.h>
+#include <vkpp/Scene/Material.h>
+#include <vkpp/Scene/Light.h>
+#include <vkpp/Scene/Camera.h>
 #include <rad/Container/SmallVector.h>
 #include <rad/IO/File.h>
 #include <rad/IO/FileSystem.h>

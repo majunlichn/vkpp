@@ -1,5 +1,5 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <vkpp/Rendering/Camera.h>
+#include <vkpp/Scene/Camera.h>
 
 namespace vkpp
 {

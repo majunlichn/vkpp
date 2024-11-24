@@ -1,5 +1,4 @@
-#include <vkpp/Rendering/SceneImporter.h>
-#include <rad/Core/TypeTraits.h>
+#include <vkpp/Scene/SceneImporter.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 

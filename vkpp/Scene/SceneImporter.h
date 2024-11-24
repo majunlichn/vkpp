@@ -1,11 +1,11 @@
 #pragma once
 
-#include <vkpp/Rendering/Scene.h>
-#include <vkpp/Rendering/SceneNode.h>
-#include <vkpp/Rendering/Mesh.h>
-#include <vkpp/Rendering/Material.h>
-#include <vkpp/Rendering/Light.h>
-#include <vkpp/Rendering/Camera.h>
+#include <vkpp/Scene/Scene.h>
+#include <vkpp/Scene/SceneNode.h>
+#include <vkpp/Scene/Mesh.h>
+#include <vkpp/Scene/Material.h>
+#include <vkpp/Scene/Light.h>
+#include <vkpp/Scene/Camera.h>
 
 #include <assimp/scene.h>
 

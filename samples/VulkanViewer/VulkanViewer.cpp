@@ -1,5 +1,5 @@
 #include "VulkanViewer.h"
-#include <vkpp/Rendering/SceneImporter.h>
+#include <vkpp/Scene/SceneImporter.h>
 
 VulkanViewer::VulkanViewer(rad::Ref<vkpp::Context> context) :
     vkpp::Window(context)
@@ -19,8 +19,8 @@ bool VulkanViewer::Init()
         return false;
     }
 
-    m_gui = RAD_NEW vkpp::GuiContext(this);
-    if (!m_gui->Init())
+    m_guiRenderer = RAD_NEW vkpp::GuiRenderer(this);
+    if (!m_guiRenderer->Init())
     {
         RAD_LOG(m_logger, err, "m_gui->Init() failed!");
         return false;
@@ -33,9 +33,9 @@ bool VulkanViewer::Init()
         return false;
     }
 
-    SetPresentViews(
+    SetColorBufferAndOverlay(
         m_solidRenderer->m_renderTargetView,
-        m_gui->GetRenderTargetView());
+        m_guiRenderer->GetRenderTargetView());
 
     if (sdl::GetApp()->GetArgc() > 1)
     {
@@ -64,9 +64,9 @@ bool VulkanViewer::Init()
 
 bool VulkanViewer::OnEvent(const SDL_Event& event)
 {
-    if (m_gui)
+    if (m_guiRenderer)
     {
-        m_gui->ProcessEvent(event);
+        m_guiRenderer->ProcessEvent(event);
     }
     return vkpp::Window::OnEvent(event);
 }
@@ -89,7 +89,12 @@ void VulkanViewer::OnIdle()
     {
         if (m_cameraController)
         {
-            m_cameraController->Update(deltaTime);
+            m_cameraInput.yawRel *= m_yawRelToRadians;
+            m_cameraInput.pitchRel *= m_pitchRelToRadians;
+            m_cameraController->Update(m_cameraInput, deltaTime);
+            m_cameraInput.yawRel = 0.0f;
+            m_cameraInput.pitchRel = 0.0f;
+            m_cameraInput.rollRel = 0.0f;
         }
 
         if (m_solidRenderer)
@@ -99,12 +104,12 @@ void VulkanViewer::OnIdle()
     }
 
     // TODO: draw something?
-    m_gui->NewFrame();
+    m_guiRenderer->NewFrame();
     if (m_showDemoWindow)
     {
         ImGui::ShowDemoWindow(&m_showDemoWindow);
     }
-    m_gui->Render();
+    m_guiRenderer->Render();
     EndFrame();
 }
 
@@ -127,14 +132,14 @@ void VulkanViewer::Resize(int width, int height)
 
     m_solidRenderer->Resize(width, height);
 
-    m_gui = RAD_NEW vkpp::GuiContext(this);
-    if (!m_gui->Init())
+    m_guiRenderer = RAD_NEW vkpp::GuiRenderer(this);
+    if (!m_guiRenderer->Init())
     {
         RAD_LOG(m_logger, err, "m_gui->Init() failed!");
     }
 
-    SetPresentViews(
-        m_solidRenderer->m_renderTargetView, m_gui->GetRenderTargetView());
+    SetColorBufferAndOverlay(
+        m_solidRenderer->m_renderTargetView, m_guiRenderer->GetRenderTargetView());
 }
 
 void VulkanViewer::OnKeyDown(const SDL_KeyboardEvent& keyDown)
@@ -155,16 +160,16 @@ void VulkanViewer::OnKeyDown(const SDL_KeyboardEvent& keyDown)
         else if (m_scene)
         {
             m_cameraController = RAD_NEW vkpp::CameraController(m_scene->m_camera.get());
+            m_cameraInput = {};
             glm::vec3 diagonal = m_scene->GetBoundingBox().GetDiagonal();
             m_cameraController->SetMoveAroundSpeed(std::max(diagonal.x, diagonal.y) / 4.0f);
             m_cameraController->SetMoveVerticalSpeed(diagonal.z / 4.0f);
 
-            vkpp::CameraController::Input& input = m_cameraController->m_input;
             SDL_DisplayID displayID = SDL_GetDisplayForWindow(m_handle);
             SDL_Rect rect = {};
             SDL_GetDisplayBounds(displayID, &rect);
-            input.yawRelToRadians = glm::pi<float>() / (float(rect.w) / 60.0f);
-            input.pitchRelToRadians = glm::pi<float>() / (float(rect.h) / 60.0f);
+            m_yawRelToRadians = glm::pi<float>() / (float(rect.w) / 60.0f);
+            m_pitchRelToRadians = glm::pi<float>() / (float(rect.h) / 60.0f);
 
             SDL_SetWindowRelativeMouseMode(m_handle, true);
         }
@@ -172,30 +177,29 @@ void VulkanViewer::OnKeyDown(const SDL_KeyboardEvent& keyDown)
 
     if (m_cameraController)
     {
-        vkpp::CameraController::Input& input = m_cameraController->m_input;
         if (keyDown.key == SDLK_W)
         {
-            input.moveForward = true;
+            m_cameraInput.moveForward = true;
         }
         if (keyDown.key == SDLK_S)
         {
-            input.moveBack = true;
+            m_cameraInput.moveBack = true;
         }
         if (keyDown.key == SDLK_A)
         {
-            input.moveLeft = true;
+            m_cameraInput.moveLeft = true;
         }
         if (keyDown.key == SDLK_D)
         {
-            input.moveRight = true;
+            m_cameraInput.moveRight = true;
         }
         if (keyDown.key == SDLK_Q)
         {
-            input.moveUp = true;
+            m_cameraInput.moveUp = true;
         }
         if (keyDown.key == SDLK_E)
         {
-            input.moveDown = true;
+            m_cameraInput.moveDown = true;
         }
     }
 
@@ -211,30 +215,29 @@ void VulkanViewer::OnKeyUp(const SDL_KeyboardEvent& keyUp)
 
     if (m_cameraController)
     {
-        vkpp::CameraController::Input& input = m_cameraController->m_input;
         if (keyUp.key == SDLK_W)
         {
-            input.moveForward = false;
+            m_cameraInput.moveForward = false;
         }
         if (keyUp.key == SDLK_S)
         {
-            input.moveBack = false;
+            m_cameraInput.moveBack = false;
         }
         if (keyUp.key == SDLK_A)
         {
-            input.moveLeft = false;
+            m_cameraInput.moveLeft = false;
         }
         if (keyUp.key == SDLK_D)
         {
-            input.moveRight = false;
+            m_cameraInput.moveRight = false;
         }
         if (keyUp.key == SDLK_Q)
         {
-            input.moveUp = false;
+            m_cameraInput.moveUp = false;
         }
         if (keyUp.key == SDLK_E)
         {
-            input.moveDown = false;
+            m_cameraInput.moveDown = false;
         }
     }
 }
@@ -245,8 +248,7 @@ void VulkanViewer::OnMouseMove(const SDL_MouseMotionEvent& mouseMotion)
     float dy = mouseMotion.yrel;
     if (m_cameraController)
     {
-        vkpp::CameraController::Input& input = m_cameraController->m_input;
-        input.yawRel += -dx;
-        input.pitchRel += -dy;
+        m_cameraInput.yawRel += -dx;
+        m_cameraInput.pitchRel += -dy;
     }
 }

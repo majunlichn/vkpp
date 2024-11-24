@@ -1,14 +1,14 @@
-#include <vkpp/Gui/GuiContext.h>
+#include <vkpp/Gui/GuiRenderer.h>
 
 namespace vkpp
 {
 
-GuiContext::GuiContext(Window* window) :
+GuiRenderer::GuiRenderer(Window* window) :
     m_window(window)
 {
 }
 
-GuiContext::~GuiContext()
+GuiRenderer::~GuiRenderer()
 {
     Destroy();
 }
@@ -17,12 +17,12 @@ static void CheckResult(VkResult result)
 {
     if (result < 0)
     {
-        VKPP_LOG(err, "vkpp::GuiContext: {}", string_VkResult(result));
+        VKPP_LOG(err, "vkpp::GuiRenderer: {}", string_VkResult(result));
         throw Error(result);
     }
 }
 
-bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
+bool GuiRenderer::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
 {
     Context* context = m_window->GetContext();
     Instance* instance = context->GetInstance();
@@ -33,7 +33,7 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
 
     // Setup Dear ImGui context:
     IMGUI_CHECKVERSION();
-    m_imgui = ImGui::CreateContext();
+    m_gui = ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;   // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
@@ -130,9 +130,9 @@ bool GuiContext::Init(rad::Span<VkDescriptorPoolSize> descPoolSizes)
     return true;
 }
 
-void GuiContext::Destroy()
+void GuiRenderer::Destroy()
 {
-    if (m_imgui)
+    if (m_gui)
     {
         Context* context = m_window->GetContext();
         Device* device = context->GetDevice();
@@ -140,23 +140,23 @@ void GuiContext::Destroy()
         ImGui_ImplVulkan_Shutdown();
         ImGui_ImplSDL3_Shutdown();
         ImGui::DestroyContext();
-        m_imgui = nullptr;
+        m_gui = nullptr;
     }
 }
 
-bool GuiContext::ProcessEvent(const SDL_Event& event)
+bool GuiRenderer::ProcessEvent(const SDL_Event& event)
 {
     return ImGui_ImplSDL3_ProcessEvent(&event);
 }
 
-void GuiContext::NewFrame()
+void GuiRenderer::NewFrame()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
 }
 
-void GuiContext::Render()
+void GuiRenderer::Render()
 {
     ImGui::Render();
 

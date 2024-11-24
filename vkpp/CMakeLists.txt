@@ -46,31 +46,31 @@ set(VKPP_SOURCE_FILES
     Core/Context.cpp
     Gui/Window.h
     Gui/Window.cpp
-    Gui/GuiContext.h
-    Gui/GuiContext.cpp
-    Rendering/Mesh.h
-    Rendering/Mesh.cpp
-    Rendering/Material.h
-    Rendering/Material.cpp
-    Rendering/Camera.h
-    Rendering/Camera.cpp
-    Rendering/CameraController.h
-    Rendering/CameraController.cpp
-    Rendering/Light.h
-    Rendering/Light.cpp
-    Rendering/Scene.h
-    Rendering/Scene.cpp
-    Rendering/SceneNode.h
-    Rendering/SceneNode.cpp
-    Rendering/Animation.h
-    Rendering/Animation.cpp
-    Rendering/SceneImporter.h
-    Rendering/SceneImporter.cpp
+    Gui/GuiRenderer.h
+    Gui/GuiRenderer.cpp
+    Scene/Mesh.h
+    Scene/Mesh.cpp
+    Scene/Material.h
+    Scene/Material.cpp
+    Scene/Camera.h
+    Scene/Camera.cpp
+    Scene/CameraController.h
+    Scene/CameraController.cpp
+    Scene/Light.h
+    Scene/Light.cpp
+    Scene/Scene.h
+    Scene/Scene.cpp
+    Scene/SceneNode.h
+    Scene/SceneNode.cpp
+    Scene/Animation.h
+    Scene/Animation.cpp
+    Scene/SceneImporter.h
+    Scene/SceneImporter.cpp
     Rendering/SolidRenderer.h
     Rendering/SolidRenderer.cpp
     Shaders/Common/Hash.glsl
-    Shaders/Gui/BlitToSwapchain.vert
-    Shaders/Gui/BlitToSwapchain.frag
+    Shaders/Gui/Present.vert
+    Shaders/Gui/Present.frag
     Shaders/Rendering/Solid.glsl
     Shaders/Rendering/Solid.vert
     Shaders/Rendering/Solid.frag

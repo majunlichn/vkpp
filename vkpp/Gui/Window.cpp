@@ -99,7 +99,7 @@ void Window::BeginFrame()
 
 void Window::EndFrame()
 {
-    BlitToSwapchain();
+    RenderToSwapchain();
     Present();
 
     m_frameIndex += 1;
@@ -153,7 +153,7 @@ void Window::Resize(int width, int height)
     CreateSwapchain(width, height);
     CreateSamplers();
 
-    CreateBlitPipeline();
+    CreatePresentPipeline();
 
     m_cmdPool = device->CreateCommandPool(queue->GetQueueFamily(),
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -339,7 +339,7 @@ bool Window::CreateSwapchain(uint32_t width, uint32_t height)
     return true;
 }
 
-bool Window::CreateBlitPipeline()
+bool Window::CreatePresentPipeline()
 {
     Device* device = m_context->GetDevice();
 
@@ -348,16 +348,16 @@ bool Window::CreateBlitPipeline()
         { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }, // renderTarget
         { 1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr }, // overlay
     };
-    m_blitDescSetLayout = device->CreateDescriptorSetLayout(descBindings);
-    m_blitPipelineLayout = device->CreatePipelineLayout(m_blitDescSetLayout.get());
+    m_presentDescSetLayout = device->CreateDescriptorSetLayout(descBindings);
+    m_presentPipelineLayout = device->CreatePipelineLayout(m_presentDescSetLayout.get());
 
     rad::Ref<GraphicsPipelineCreateInfo> pipelineInfo =
         RAD_NEW GraphicsPipelineCreateInfo(device);
     ShaderCompiler shaderCompiler;
     auto vertBinary = shaderCompiler.CompileGLSLFromFile(
-        VK_SHADER_STAGE_VERTEX_BIT, "Gui/BlitToSwapchain.vert", "main", {});
+        VK_SHADER_STAGE_VERTEX_BIT, "Gui/Present.vert", "main", {});
     auto fragBinary = shaderCompiler.CompileGLSLFromFile(
-        VK_SHADER_STAGE_FRAGMENT_BIT, "Gui/BlitToSwapchain.frag", "main", {});
+        VK_SHADER_STAGE_FRAGMENT_BIT, "Gui/Present.frag", "main", {});
     rad::Ref<ShaderModule> vert = device->CreateShaderModule(vertBinary);
     rad::Ref<ShaderModule> frag = device->CreateShaderModule(fragBinary);
     pipelineInfo->m_shaderStages =
@@ -367,9 +367,9 @@ bool Window::CreateBlitPipeline()
     };
     pipelineInfo->m_inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     pipelineInfo->SetColorBlendDisabled(1);
-    pipelineInfo->m_layout = m_blitPipelineLayout;
+    pipelineInfo->m_layout = m_presentPipelineLayout;
     pipelineInfo->SetRenderingInfo(m_surfaceFormat.format);
-    m_blitPipeline = device->CreateGraphicsPipeline(pipelineInfo->Setup());
+    m_presentPipeline = device->CreateGraphicsPipeline(pipelineInfo->Setup());
 
     // Resource bingings:
     // set0, binding0: combined image sampler: renderTarget;
@@ -379,40 +379,40 @@ bool Window::CreateBlitPipeline()
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 },
     };
 
-    if (!m_blitDescPool)
+    if (!m_presentDescPool)
     {
-        m_blitDescPool = device->CreateDescriptorPool(1, poolSizes);
+        m_presentDescPool = device->CreateDescriptorPool(1, poolSizes);
     }
-    if (!m_blitDescSet)
+    if (!m_presentDescSet)
     {
-        m_blitDescSet = m_blitDescPool->Allocate(m_blitDescSetLayout.get());
+        m_presentDescSet = m_presentDescPool->Allocate(m_presentDescSetLayout.get());
     }
 
     return true;
 }
 
-void Window::SetPresentViews(
+void Window::SetColorBufferAndOverlay(
     rad::Ref<ImageView> colorBufferView, rad::Ref<ImageView> overlayView)
 {
     m_colorBufferView = colorBufferView;
     m_overlayView = overlayView;
-    Image* renderTarget = colorBufferView->GetImage();
+    Image* colorBuffer = colorBufferView->GetImage();
     Image* overlay = overlayView->GetImage();
 
-    if (m_blitDescSet)
+    if (m_presentDescSet)
     {
         VkWriteDescriptorSet writes[2] = {};
 
         writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[0].pNext = nullptr;
-        writes[0].dstSet = m_blitDescSet->GetHandle();
+        writes[0].dstSet = m_presentDescSet->GetHandle();
         writes[0].dstBinding = 0;
         writes[0].dstArrayElement = 0;
         writes[0].descriptorCount = 1;
         writes[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         VkDescriptorImageInfo renderTargetInfo = {};
-        if (renderTarget->GetWidth() <= m_swapchain->GetWidth() &&
-            renderTarget->GetHeight() <= m_swapchain->GetHeight())
+        if (colorBuffer->GetWidth() <= m_swapchain->GetWidth() &&
+            colorBuffer->GetHeight() <= m_swapchain->GetHeight())
         {
             renderTargetInfo.sampler = m_samplerNearest->GetHandle();
         }
@@ -426,7 +426,7 @@ void Window::SetPresentViews(
 
         writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         writes[1].pNext = nullptr;
-        writes[1].dstSet = m_blitDescSet->GetHandle();
+        writes[1].dstSet = m_presentDescSet->GetHandle();
         writes[1].dstBinding = 1;
         writes[1].dstArrayElement = 0;
         writes[1].descriptorCount = 1;
@@ -437,11 +437,11 @@ void Window::SetPresentViews(
         overlayInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         writes[1].pImageInfo = &overlayInfo;
 
-        m_blitDescSet->Update(writes);
+        m_presentDescSet->Update(writes);
     }
 }
 
-void Window::BlitToSwapchain()
+void Window::RenderToSwapchain()
 {
     Device* device = m_context->GetDevice();
     Queue* queue = m_context->GetQueue();
@@ -478,10 +478,10 @@ void Window::BlitToSwapchain()
     ImageView* swapchainImageView = m_swapchain->GetCurrentImageView();
     VkClearColorValue clearColor = {};
     cmdBuffer->BeginRendering(swapchainImageView, &clearColor);
-    cmdBuffer->BindPipeline(m_blitPipeline.get());
+    cmdBuffer->BindPipeline(m_presentPipeline.get());
     cmdBuffer->BindDescriptorSets(
-        m_blitPipeline.get(), m_blitPipelineLayout.get(),
-        0, m_blitDescSet.get());
+        m_presentPipeline.get(), m_presentPipelineLayout.get(),
+        0, m_presentDescSet.get());
 
     VkViewport viewport = {};
     viewport.x = 0.0f;

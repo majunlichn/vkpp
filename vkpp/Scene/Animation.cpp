@@ -1,4 +1,4 @@
-#include <vkpp/Rendering/Animation.h>
+#include <vkpp/Scene/Animation.h>
 
 namespace vkpp
 {
