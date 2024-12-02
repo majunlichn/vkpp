@@ -74,6 +74,12 @@ set(VKPP_SOURCE_FILES
     Shaders/Rendering/Solid.glsl
     Shaders/Rendering/Solid.vert
     Shaders/Rendering/Solid.frag
+    Compute/Tensor.h
+    Compute/Tensor.cpp
+    Compute/ElementWiseUnary.h
+    Compute/ElementWiseUnary.cpp
+    Compute/ElementWiseBinary.h
+    Compute/ElementWiseBinary.cpp
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${VKPP_SOURCE_FILES})
